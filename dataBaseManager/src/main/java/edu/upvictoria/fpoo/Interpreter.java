@@ -405,8 +405,13 @@ public class Interpreter
 
             // create empty row with column names
             HashMap<String, Object> row = new HashMap<>();
-            for (Expression expr : clause.columns.getX()) {
-                row.put(expr.toString(), null);
+            for (Pair<Expression, Token> pair : clause.columns.getX()) {
+                // row.put(expr.toString(), null);
+                if (pair.getY() != null) {
+                    row.put(pair.getY().lexeme, null);
+                } else {
+                    row.put(pair.getX().toString(), null);
+                }
             }
 
             table.addRow(row);
@@ -414,10 +419,15 @@ public class Interpreter
             // add column headers
             table.writeColumnNames(new ArrayList<String>(row.keySet()));
 
-            for (Expression expr : clause.columns.getX()) {
+            for (Pair<Expression, Token> pair : clause.columns.getX()) {
                 // evaluate result
-                Object value = evaluateClause(expr);
-                table.getRow(0).put(expr.toString(), value);
+                Object value = evaluateClause(pair.getX());
+                // table.getRow(0).put(expr.toString(), value);
+                if (pair.getY() != null) {
+                    table.getRow(0).put(pair.getY().lexeme, value);
+                } else {
+                    table.getRow(0).put(pair.getX().toString(), value);
+                }
             }
 
             return;
@@ -430,12 +440,18 @@ public class Interpreter
 
         // get the evaluations
         Table partial_table = new Table();
-        List<Expression> expressionList = clause.columns.getX();
+        // List<Expression> expressionList = clause.columns.getX();
+        List<Pair<Expression, Token>> expressionList = clause.columns.getX();
 
         // create empty row with column names
         HashMap<String, Object> row = new HashMap<>();
-        for (Expression expr : expressionList) {
-            row.put(expr.toString(), null);
+        for (Pair<Expression, Token> pair : expressionList) {
+            // if the expression have an alias
+            if (pair.getY() != null) {
+                row.put(pair.getY().lexeme, null);
+            } else {
+                row.put(pair.getX().toString(), null);
+            }
         }
         // add all the empty rows to the new table
         for (HashMap<String, Object> r : table.getRows()) {
@@ -452,10 +468,10 @@ public class Interpreter
         // column headers
         aggregate_function_table.writeColumnNames(new ArrayList<String>(row_aggregate.keySet()));
 
-        for (Expression expr : expressionList) {
+        for (Pair<Expression, Token> pair : expressionList) {
             // evaluate result
-            Object listOfValues = evaluateClause(expr);
-            String columnName = expr.toString();
+            Object listOfValues = evaluateClause(pair.getX());
+            String columnName = pair.getY() != null ? pair.getY().lexeme : pair.getX().toString();
             if (!(listOfValues instanceof List)) { // ? Aggregate function
 
                 // add the value to the table

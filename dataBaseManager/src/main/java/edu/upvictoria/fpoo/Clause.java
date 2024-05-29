@@ -54,7 +54,7 @@ abstract class Clause {
     }
 
     static class SelectClause extends Clause {
-        SelectClause(Pair<List<Expression>, Boolean> columns, Token table_name, Expression where_expression, List<String> columns_order,
+        SelectClause(Pair<List<Pair<Expression, Token>>, Boolean> columns, Token table_name, Expression where_expression, List<String> columns_order,
                 int limit) {
             this.columns = columns;
             this.table_name = table_name;
@@ -68,7 +68,7 @@ abstract class Clause {
             return visitor.selectClause(this);
         }
 
-        final Pair<List<Expression>, Boolean> columns;
+        final Pair<List<Pair<Expression, Token>>, Boolean> columns;
         final Token table_name;
         final Expression where_expression;
         final List<String> columns_order;

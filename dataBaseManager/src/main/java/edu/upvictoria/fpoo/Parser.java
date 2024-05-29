@@ -181,7 +181,7 @@ public class Parser {
     // limitClause = LIMIT addExpression
     private Clause selectStmnt() {
         // list of expressions and distinct boolean
-        Pair<List<Expression>, Boolean> select_clause = selectClause();
+        Pair<List<Pair<Expression, Token>>, Boolean> select_clause = selectClause();
 
         // TODO: Implement the from correctly. Should be able of have a subquery
         Token from_clause = null;
@@ -194,7 +194,7 @@ public class Parser {
             where_expression = whereClause();
         }
 
-        // TODO: Implement the group by clause 
+        // TODO: Implement the group by clause
         Expression groupby_expression = null;
         if (match(GROUP)) {
             consume(BY, "Expected BY after GROUP.");
@@ -221,39 +221,50 @@ public class Parser {
     }
 
     // selectClause = SELECT (DISTINCT)? selectList
-    private Pair<List<Expression>, Boolean> selectClause() {
+    private Pair<List<Pair<Expression, Token>>, Boolean> selectClause() {
         boolean distinct = match(DISTINCT);
-        List<Expression> selectList = selectList();
+        List<Pair<Expression, Token>> selectList = selectList();
         if (distinct == true) {
             if (selectList.size() > 1) {
                 throw error(peek(), "Expected only one column after DISTINCT.");
-            }   
+            }
         }
-        
+
         return new Pair<>(selectList, distinct);
-        
+
     }
-    
 
     // selectList = '*' | (expression (AS ID)? (',' expression (AS ID)?)*)
-    private List<Expression> selectList() {
-        List<Expression> columns = new ArrayList<>();
-        String alias = null;
+    private List<Pair<Expression, Token>> selectList() {
+        List<Pair<Expression, Token>> columns = new ArrayList<>();
+        Pair<Expression, Token> column = null;
+
         if (match(STAR)) {
-            columns.add(new Expression.Literal("*", false));
+            columns.add(new Pair<>(new Expression.Literal("*", false), null));
             return columns;
         }
 
-        columns.add(expression());
+        column = new Pair<>(expression(), null);
         if (match(AS)) {
-            alias = previous().lexeme;
-            columns.add(new Expression.Literal(alias, true));
+            if (match(IDENTIFIER))
+                // alias = previous();
+                columns.add(new Pair<>(column.getX(), previous()));
+            else
+                ErrorHandler.error(peek(), "Expected alias after AS.");
+        } else {
+            columns.add(column);
         }
 
         while (match(COMMA)) {
-            columns.add(expression());
+            // columns.add(new Pair<>(expression(), alias));
+            column = new Pair<>(expression(), null);
             if (match(AS)) {
-                columns.add(new Expression.Literal(previous().lexeme, true));
+                if (match(IDENTIFIER))
+                    columns.add(new Pair<>(column.getX(), previous()));
+                else
+                    ErrorHandler.error(peek(), "Expected alias after AS.");
+            } else {
+                columns.add(column);
             }
         }
 
@@ -263,9 +274,9 @@ public class Parser {
     // fromClause = FROM (tableName | '(' selectStmnt ')')
     private Token fromClause() {
         // if (match(LEFT_PAREN)) {
-        //     Clause select = selectStmnt();
-        //     consume(RIGHT_PAREN, "Expected ) after select statement.");
-        //     return select;
+        // Clause select = selectStmnt();
+        // consume(RIGHT_PAREN, "Expected ) after select statement.");
+        // return select;
         // }
 
         return consume(IDENTIFIER, "Expected table name after FROM.");
@@ -276,24 +287,24 @@ public class Parser {
         return expression();
     }
 
-    // expression         = orExpression
-    // orExpression       = andExpression (OR andExpression)*
+    // expression = orExpression
+    // orExpression = andExpression (OR andExpression)*
     private Expression expression() {
         Expression andExpression = andExpression();
-        
+
         while (match(OR)) {
             Token operator = previous();
             Expression right = andExpression();
             andExpression = new Expression.Binary(andExpression, operator, right);
         }
-        
+
         return andExpression;
     }
-    
-    // andExpression      = notExpression (AND notExpression)*
+
+    // andExpression = notExpression (AND notExpression)*
     private Expression andExpression() {
         Expression notExpression = notExpression();
-        
+
         while (match(AND)) {
             Token operator = previous();
             Expression right = notExpression();
@@ -302,22 +313,22 @@ public class Parser {
 
         return notExpression;
     }
-    
-    // notExpression      = (NOT)? isNullExpression
+
+    // notExpression = (NOT)? isNullExpression
     private Expression notExpression() {
         if (match(NOT)) {
             Token operator = previous();
             Expression right = isNullExpression();
             return new Expression.Unary(operator, right);
         }
-        
+
         return isNullExpression();
     }
-    
-    // isNullExpression   = equalExpression (IS (NOT)? NULL)?
+
+    // isNullExpression = equalExpression (IS (NOT)? NULL)?
     private Expression isNullExpression() {
         Expression left = equalExpression();
-        
+
         if (match(IS)) {
             Token operator = previous();
             if (match(NOT)) {
@@ -328,27 +339,28 @@ public class Parser {
             }
             return new Expression.Unary(operator, left);
         }
-        
+
         return left;
     }
-    
-    // equalExpression    = compareExpression (('=' | '!=') compareExpression)*
+
+    // equalExpression = compareExpression (('=' | '!=') compareExpression)*
     private Expression equalExpression() {
         Expression left = compareExpression();
-        
+
         while (match(EQUAL_EQUAL, BANG_EQUAL, EQUAL)) {
             Token operator = previous();
             Expression right = compareExpression();
             left = new Expression.Binary(left, operator, right);
         }
-        
+
         return left;
     }
 
-    // compareExpression  = concatExpression (('>' | '>=' | '<' | '<=') concatExpression)*
+    // compareExpression = concatExpression (('>' | '>=' | '<' | '<=')
+    // concatExpression)*
     private Expression compareExpression() {
         Expression left = concatExpression();
-        
+
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             Token operator = previous();
             Expression right = concatExpression();
@@ -357,49 +369,51 @@ public class Parser {
 
         return left;
     }
-    
-    // concatExpression   = addExpression ('||' addExpression)*
+
+    // concatExpression = addExpression ('||' addExpression)*
     private Expression concatExpression() {
         Expression left = addExpression();
-        
+
         while (match(PIPE_PIPE)) {
             Token operator = previous();
             Expression right = addExpression();
             left = new Expression.Binary(left, operator, right);
         }
-        
+
         return left;
     }
-    
-    // addExpression      = multiplyExpression (('+'|'-') multiplyExpression)*
+
+    // addExpression = multiplyExpression (('+'|'-') multiplyExpression)*
     private Expression addExpression() {
         Expression left = multiplyExpression();
-        
+
         while (match(PLUS, MINUS)) {
             Token operator = previous();
             Expression right = multiplyExpression();
             left = new Expression.Binary(left, operator, right);
         }
-        
+
         return left;
     }
-    
-    // multiplyExpression = unaryExpression (('*'|'/'|'div'|'mod'|'%') unaryExpression)*
+
+    // multiplyExpression = unaryExpression (('*'|'/'|'div'|'mod'|'%')
+    // unaryExpression)*
     private Expression multiplyExpression() {
         Expression left = unaryExpression();
-        
+
         while (match(STAR, SLASH, DIV, MOD, PORCENTAJE)) {
             Token operator = previous();
             Expression right = unaryExpression();
             left = new Expression.Binary(left, operator, right);
         }
-        
+
         return left;
     }
-    
-    // unaryExpression    = ('-' unaryExpression) | funcCallExpression | primaryExpression
+
+    // unaryExpression = ('-' unaryExpression) | funcCallExpression |
+    // primaryExpression
     // funcCallExpression = funcName ('(' (expression (',' expression)*)? ')')*
-    // primaryExpression  = TRUE | FALSE | NULL | NUMBER | STRING | ID | '*' |
+    // primaryExpression = TRUE | FALSE | NULL | NUMBER | STRING | ID | '*' |
     // '(' expression ')'
 
     // # Functions
@@ -412,7 +426,7 @@ public class Parser {
         }
 
         if (match(
-            UCASE, LCASE, CAPITALIZE, FLOOR, ROUND, CEIL, RAND, COUNT, MIN, MAX, SUM, AVG)) {
+                UCASE, LCASE, CAPITALIZE, FLOOR, ROUND, CEIL, RAND, COUNT, MIN, MAX, SUM, AVG)) {
             Token funcName = previous();
             consume(LEFT_PAREN, "Expected ( after function name.");
             List<Expression> arguments = new ArrayList<>();
@@ -422,13 +436,13 @@ public class Parser {
                     arguments.add(expression());
                 }
             }
-            
+
             consume(RIGHT_PAREN, "Expected ) after function arguments.");
             return new Expression.FunctionCall(funcName, arguments);
         }
 
         if (match(TRUE, FALSE, NULL, NUMBER, STRING, IDENTIFIER, STAR)) {
-            if (previous().type == IDENTIFIER) 
+            if (previous().type == IDENTIFIER)
                 return new Expression.Literal(previous().literal, true);
             return new Expression.Literal(previous().literal, false);
         }
@@ -442,70 +456,69 @@ public class Parser {
         throw error(peek(), "Expected expression.");
 
     }
-    
+
     // private Expression funcCallExpression() {
-    //     if (match(UCASE, FLOOR, ROUND, RAND, COUNT, MIN, MAX, SUM, AVG)) {
-    //         Token funcName = previous();
-    //         consume(LEFT_PAREN, "Expected ( after function name.");
-    //         List<Expression> arguments = new ArrayList<>();
-    //         if (!check(RIGHT_PAREN)) {
-    //             arguments.add(expression());
-    //             while (match(COMMA)) {
-    //                 arguments.add(expression());
-    //             }
-    //         }
-    //         consume(RIGHT_PAREN, "Expected ) after function arguments.");
-    //         return new Expression.FunctionCall(funcName, arguments);
-    //     }
-        
-    //     throw error(peek(), "Expected expression.");
+    // if (match(UCASE, FLOOR, ROUND, RAND, COUNT, MIN, MAX, SUM, AVG)) {
+    // Token funcName = previous();
+    // consume(LEFT_PAREN, "Expected ( after function name.");
+    // List<Expression> arguments = new ArrayList<>();
+    // if (!check(RIGHT_PAREN)) {
+    // arguments.add(expression());
+    // while (match(COMMA)) {
+    // arguments.add(expression());
+    // }
+    // }
+    // consume(RIGHT_PAREN, "Expected ) after function arguments.");
+    // return new Expression.FunctionCall(funcName, arguments);
     // }
 
-    
+    // throw error(peek(), "Expected expression.");
+    // }
+
     // // <TERM>::= <FACTOR> (( "-" | "+" ) <FACTOR>)*
     // private Expression term() {
-    //     Expression left = factor();
-    //     while (match(MINUS, PLUS)) {
-    //         Token operator = previous();
-    //         Expression right = factor();
-    //         left = new Expression.Binary(left, operator, right);
-    //     }
-    //     return left;
+    // Expression left = factor();
+    // while (match(MINUS, PLUS)) {
+    // Token operator = previous();
+    // Expression right = factor();
+    // left = new Expression.Binary(left, operator, right);
+    // }
+    // return left;
     // }
 
     // // <FACTOR>::= <OPERAND> (( "/" | "*" ) <OPERAND>)*
     // private Expression factor() {
-    //     Expression left = operand();
-    //     while (match(SLASH, STAR)) {
-    //         Token operator = previous();
-    //         Expression right = operand();
-    //         left = new Expression.Binary(left, operator, right);
-    //     }
-    //     return left;
+    // Expression left = operand();
+    // while (match(SLASH, STAR)) {
+    // Token operator = previous();
+    // Expression right = operand();
+    // left = new Expression.Binary(left, operator, right);
+    // }
+    // return left;
     // }
 
     // // <OPERAND>::= <NUMBER> | <STRING> | TRUE | FALSE | NULL | NOT NULL |
     // // IDENTIFIER | "(" <EXPRESSION> ")"
     // private Expression operand() {
-    //     if (match(NUMBER, STRING, TRUE, FALSE, NULL, NOT)) {
-    //         if (!match(NULL)) {
-    //             if (prevwhereClause = WHERE expressionious().type == NOT) {
-    //                 consume(NULL, "Expected NULL after NOT.");
-    //             }
-    //         }
-    //         return new Expression.Literal(previous().literal, false);
-    //     }
-    //     if (match(IDENTIFIER)) {
-    //         return new Expression.Literal(previous().lexeme, true);
-    //     }
+    // if (match(NUMBER, STRING, TRUE, FALSE, NULL, NOT)) {
+    // if (!match(NULL)) {
+    // if (prevwhereClause = WHERE expressionious().type == NOT) {
+    // consume(NULL, "Expected NULL after NOT.");
+    // }
+    // }
+    // return new Expression.Literal(previous().literal, false);
+    // }
+    // if (match(IDENTIFIER)) {
+    // return new Expression.Literal(previous().lexeme, true);
+    // }
 
-    //     if (match(LEFT_PAREN)) {
-    //         Expression expression = expression();
-    //         consume(RIGHT_PAREN, "Expected ) after expression.");
-    //         return new Expression.Grouping(expression);
-    //     }
+    // if (match(LEFT_PAREN)) {
+    // Expression expression = expression();
+    // consume(RIGHT_PAREN, "Expected ) after expression.");
+    // return new Expression.Grouping(expression);
+    // }
 
-    //     throw error(peek(), "Expected operand.");
+    // throw error(peek(), "Expected operand.");
     // }
 
     // orderbyClause = ORDER BY expression orderType (, expression orderType)*
@@ -583,7 +596,7 @@ public class Parser {
         // transform into a hashmap
         // HashMap<String, Object> valuesMap = new HashMap<>();
         // for (int i = 0; i < columns.size(); i++) {
-        //     valuesMap.put(columns.get(i), query);
+        // valuesMap.put(columns.get(i), query);
         // }
         HashMap<String, Expression> valuesMap = new HashMap<>(); // <column_name, value>
         for (int i = 0; i < columns.size(); i++) {
@@ -591,8 +604,9 @@ public class Parser {
         }
 
         return new Clause.InsertClause(table_name, valuesMap);
-        
+
     }
+
     // query = (valuesClause | selectStmnt)
     // valuesClause = VALUES '(' expression (',' expression)* ')'
     private Object query() {
@@ -643,14 +657,13 @@ public class Parser {
         consume(EQUAL, "Expected = after column name.");
         valuesMap.put(column_name, expression());
 
-
         while (match(COMMA)) {
             column_name = consume(IDENTIFIER, "Expected column name.").lexeme;
             consume(EQUAL, "Expected = after column name.");
             valuesMap.put(column_name, expression());
         }
         return valuesMap;
-        
+
     }
 
     /**************************************************************************/

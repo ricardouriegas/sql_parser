@@ -90,7 +90,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
                 builder.append("* ");
             } else {
                 for (int i = 0; i < clause.columns.getX().size(); i++) {
-                    builder.append(clause.columns.getX().get(i).accept(this));
+                    builder.append(clause.columns.getX().get(i).getY().lexeme);
                     if (i != clause.columns.getX().size() - 1) {
                         builder.append(", ");
                     }
