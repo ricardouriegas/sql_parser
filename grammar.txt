@@ -1,0 +1,216 @@
+-- * means 0 or more
+-- + means 1 or more
+    
+================================================================================
+
+== PRINCIPAL RULES ==
+<PROGRAM>::= <SENTENCE> ;
+<SENTENCE>::= <USE_CLAUSE> | <CREATE_CLAUSE> | <DROP_CLAUSE> | <SELECT_CLAUSE> | <INSERT_CLAUSE> | <UPDATE_CLAUSE> | <DELETE_CLAUSE>| <ALTER_TABLE>
+<USE_CLAUSE>::= USE <PATH>
+
+<CREATE_CLAUSE>::= CREATE TABLE <TABLE_NAME> OPEN_PAR <COLUMN_DEFINITION> (, <COLUMN_DEFINITION>)* CLOSE_PAR
+<COLUMN_DEFINITION>::= <COLUMN_NAME> <DATA_TYPE> <CONSTRAINT>* -- esto es lo que voy a guardar en el metadata
+
+<DROP_CLAUSE>::= DROP TABLE <TABLE_NAME>
+
+<ALTER_TABLE>::= 
+
+== DML ==
+-- TODO: "AS" NOT IMPLEMENTED ALREADY
+-- TODO: <GROUP_BY_CLAUSE>? NOT IMPLEMENTED ALREADY
+-- SELECT perro, gato FROM animales WHERE perro = 1 AND gato = 2 ORDER BY perro ASC LIMIT 10;
+<SELECT_CLAUSE>::= SELECT (STAR | <COLUMN_NAME> (, <COLUMN_NAME>)*) <FROM_CLAUSE> <WHERE_CLAUSE>? <ORDER_BY_CLAUSE>? <LIMIT_CLAUSE>?
+<FROM_CLAUSE>::= FROM <TABLE_NAME>
+<WHERE_CLAUSE>::= WHERE <EXPRESSION> 
+<EXPRESSION>::= <EQUALITY_LEFT> (OR <EQUALITY_LEFT>)*
+<EQUALITY_LEFT>::= <EQUALITY> (AND <EQUALITY>)*
+<EQUALITY>::= <COMPARISION> (( "!=" | "==" | "=" ) <COMPARISION>)*
+<COMPARISION>::= <TERM> (( ">" | ">=" | "<" | "<=" ) <TERM>)*
+<TERM>::= <FACTOR> (( "-" | "+" ) <FACTOR>)*
+<FACTOR>::= <OPERAND> (( "/" | "*" ) <OPERAND>)*
+<OPERAND>::= <NUMBER> | <STRING> | TRUE | FALSE | NULL | NOT_NULL | IDENTIFIER | "(" <EXPRESSION> ")"
+-- TODO: Implementar 'IS'
+-- Valido ahorita que no existe 'IS': 'WHERE ALUMNO == NULL OR APELLIDO != NOT_NULL'
+
+
+<ORDER_BY_CLAUSE>::= ORDER BY <COLUMN_NAME> <ORDER_TYPE>? (, <COLUMN_NAME> <ORDER_TYPE>?)*
+<ORDER_TYPE>::= ASC | DESC
+<LIMIT_CLAUSE>::= LIMIT <DIGIT> -- TODO: Se puede agregar keyword: ROWS, asi que abria que implementarlo
+
+-- INSERT INTO alumnos (nombre, apellido, fecha) VALUES ('Pedro', 'Perez', '12/12/2020');
+<INSERT_CLAUSE>::= INSERT INTO <TABLE_NAME> OPEN_PAR <COLUMN_NAME> (, <COLUMN_NAME>)*  CLOSE_PAR 
+                                            VALUES 
+                                            OPEN_PAR <VALUE> (, <VALUE>)* CLOSE_PAR
+-- UPDATE alumnos SET nombre = 'Pedro' WHERE id = 10;
+<UPDATE_CLAUSE>::= UPDATE <TABLE_NAME> SET (<COLUMN_NAME> EQUAL <VALUE>)+ <WHERE_CLAUSE>
+-- DELETE FROM alumnos WHERE id = 10;
+-- DELETE FROM alumnos;
+<DELETE_CLAUSE>::= DELETE FROM <TABLE_NAME> <WHERE_CLAUSE>?
+
+== DEFINITIONS ==
+-- TODO: Checar como se manejan los nombres de las variables y expresiones
+-- TODO: Checar String tiene que poder ser una fecha e.g. "12/12/2020"
+-- A date is written with ', but the strings are with "
+<PATH>::= <STRING>
+<TABLE_NAME>::= <STRING>
+<COLUMN_NAME>::= ALPHA (ALPHA | DIGIT)*
+<STRING>::= \" ALPHA (ALPHA | DIGIT)* \"
+<ALPHA>::= [a-zA-Z\_\-]
+<DIGIT>::= [0-9]
+<DATA_TYPE>::= NUMBER | STRING | DATE | VARCHAR | BOOLEAN
+<VALUE>::= <STRING> | <DIGIT> | TRUE | FALSE | NULL
+<CONSTRAINT>::= PRIMARY_KEY | NOT_NULL | UNIQUE | NULL
+
+
+
+
+
+
+<number>::= (0 ... 9)*
+<date>::= MM/DD/YYYY
+<value>::= <string> | <number> | <date>
+<operator>::= = | > | < | >= | <= | <>
+<ORDER_TYPE>::= ASC | DESC
+<EXPRESSION>::= <BOOLEAN_TERM> (OR <BOOELAN_TERM>)*
+<BOOELAN_TERM>::= <BOOLEAN_FACTOR> (AND <BOOLEAN_FACTOR>)*
+<BOOLEAN_FACTOR>::= (NOT)? <BOOLEAN_PRIMARY>
+<BOOLEAN_PRIMARY>
+
+--------------------------------------------------------------------------------
+<PROGRAM>::= (<SENTENCE> ";")+
+
+<SENTENCE>::= <USE_CLAUSE> | <CREATE_CLAUSE> | <DROP_CLAUSE> | <SELECT_CLAUSE> |<INSERT_CLAUSE> | <UPDATE_CLAUSE> | <DELETE_CLAUSE>| <SHOW_CLAUSE>
+
+# DDL (Data Definition Language):
+
+<CREATE_CLAUSE>::= CREATE TABLE <TABLE_NAME> "(" <COLUMN_DEFINITION> ("," <COLUMN_DEFINITION>)* ")"
+<DROP_CLAUSE>::= DROP TABLE <TABLE_NAME>
+
+# DML (Data Manipulation Language):
+
+<INSERT_CLAUSE>::= INSERT INTO <TABLE_NAME> "(" <COLUMN_NAME> ("," <COLUMN_NAME>)*  ")" VALUES "(" <VALUE> ("," <VALUE>)* ")"
+<UPDATE_CLAUSE>::= UPDATE <TABLE_NAME> SET <COLUMN_NAME> EQUAL <VALUE> ("," <COLUMN_NAME> EQUAL <VALUE>)* <WHERE_CLAUSE> -- maybe here we should use an expression to be able fo doing somthing like UPDATE Productos SET Precio = Precio * 1.1 WHERE Categoria = 'Electrónica' AND Stock < 50;
+<DELETE_CLAUSE>::= DELETE FROM <TABLE_NAME> <WHERE_CLAUSE>?
+
+# DQL (Data Query Language):
+
+<SELECT_EXPRESSION>::= SELECT <DISTINCT>? <SELECT_LIST>  
+<SELECT_LIST>::= (STAR | <EXPRESSION> (AS <IDENTIFIER>)? ("," <EXPRESSION> (AS <IDENTIFIER>)?)*) 
+<SELECT_CLAUSE>::= <FROM_CLAUSE>? <WHERE_CLAUSE>? <ORDER_BY_CLAUSE>? <LIMIT_CLAUSE>?
+
+# Others:
+
+<USE_CLAUSE>::= USE <PATH>
+<SHOW_CLAUSE>::= SHOW TABLES
+
+--------------------------------------------------------------------------------
+# Definitions:
+<IDENTIFIER>::= ALPHA (ALPHA | DIGIT)*
+<TABLE_NAME>::= <IDENTIFIER>
+<COLUMN_DEFINITION>::= <COLUMN_NAME> <DATA_TYPE> <CONSTRAINT>*
+
+<COLUMN_NAME>::= <IDENTIFIER>
+<VALUE>::= <STRING> | <NUMBER> | TRUE | FALSE | NULL
+<DATA_TYPE>::= NUMBER | STRING | DATE | VARCHAR | BOOLEAN
+<CONSTRAINT>::= PRIMARY KEY | NOT NULL | UNIQUE | NULL
+
+<WHERE_CLAUSE>::= WHERE <EXPRESSION>
+<EXPRESSION>::= <EQUALITY_LEFT> (OR <EQUALITY_LEFT>)* 
+<EQUALITY_LEFT>::= <EQUALITY> (AND <EQUALITY>)*
+<EQUALITY>::= <COMPARISION> (( "!=" | "==" | "=" ) <COMPARISION>)*
+<COMPARISION>::= <TERM> (( ">" | ">=" | "<" | "<=" ) <TERM>)*
+<TERM>::= <FACTOR> (( "-" | "+" ) <FACTOR>)*
+<FACTOR>::= <LITERAL> (( "/" | "*" | DIV | MOD | "%" ) <LITERAL>)*
+<LITERAL>::= <NUMBER> | <STRING> | TRUE | FALSE | NULL | "(" <EXPRESSION> ")" | <IDENTIFIER> | <FUNCTION_CALL> 
+<FUNCTION_CALL>::= <UCASE> | <FLOOR> | <ROUND> | <RAND> | <COUNT> | <MIN> | <MAX> | <SUM> | <AVG>
+<NUMBER>::= (0 ... 9)*
+<STRING>::= (\' | \") <IDENTIFIER> (\' | \") 
+
+<FROM_CLAUSE>::= FROM <TABLE_NAME>
+<ORDER_BY_CLAUSE>::= ORDER BY <COLUMN_NAME> <ORDER_TYPE>? (, <COLUMN_NAME> <ORDER_TYPE>?)*
+<ORDER_TYPE>::= ASC | DESC
+<LIMIT_CLAUSE>::= LIMIT <NUMBER>, 
+
+
+--------------------------------------------------------------------------------
+# NEW GRAMMAR (this one should be the final one or at least the scalable one)
+# Statements (every statement returns void)
+program            = (statement ';')* EOF
+statement          = useStmnt | createTableStmnt | insertStmnt | updateStmnt
+                     | selectStmnt | deleteStmnt | dropStmnt | showTableStmnt
+useStmnt           = USE dbName
+createTableStmnt   = CREATE TABLE tableName '('columnDef (',' columnDef)*')'
+insertStmnt        = INSERT INTO tableName
+                     ('(' columnName (',' columnName)* ')') query -- just explicit insert
+updateStmnt        = UPDATE tableName setClause whereClause
+selectStmnt        = selectClause (fromClause)? (whereClause)? (groupbyClause)?
+                     (orderbyClause)? (limitClause)?
+deleteStmnt        = DELETE FROM tableName (whereClause)?
+dropStmnt          = DROP TABLE tableName
+showTableStmnt     = SHOW TABLES
+columnDef          = columnName dataType (constraint)?
+query              = (valuesClause | selectStmnt)
+
+# Clauses (every clause returns a table)
+valuesClause       = VALUES '(' expression (',' expression)* ')'
+setClause          = SET columnName '=' expression
+                     (',' columnName '=' expression)*
+selectClause       = SELECT (DISTINCT)? selectList
+fromClause         = FROM (tableName | '(' selectStmnt ')')
+whereClause        = WHERE expression
+groupbyClause      = GROUP BY expression (',' expression)*
+orderbyClause      = ORDER BY expression (',' expression)*
+limitClause        = LIMIT addExpression
+selectList         = '*' | (expression (AS ID)? (',' expression (AS ID)?)*)
+
+# Expressions
+expression         = orExpression
+orExpression       = andExpression (OR andExpression)*
+andExpression      = notExpression (AND notExpression)*
+notExpression      = (NOT)? isNullExpression
+isNullExpression   = equalExpression (IS (NOT)? NULL)?
+equalExpression    = compareExpression (('=' | '!=') compareExpression)*
+compareExpression  = concatExpression (('>' | '>=' | '<' | '<=') concatExpression)*
+concatExpression   = addExpression ('||' addExpression)*
+addExpression      = multiplyExpression (('+'|'-') multiplyExpression)*
+multiplyExpression = unaryExpression (('*'|'/'|'div'|'mod') unaryExpression)*
+unaryExpression    = ('-' unaryExpression) | funcCallExpression | primaryExpression
+funcCallExpression = funcName ('(' (expression (',' expression)*)? ')')*
+primaryExpression  = TRUE | FALSE | NULL | NUMBER | STRING | ID | '*' |
+                     '(' expression ')'
+
+# Functions
+funcName           = UCASE | FLOOR | ROUND | RAND | COUNT | MIN | MAX | SUM | AVG
+
+# Terminals
+dataType           = 'NUMBER' | 'DATE' | 'STRING' | 'BOOLEAN' -- just this 4 types, i dont accept VARCHAR 
+constraint         = NOT NULL | PRIMARY KEY | UNIQUE
+dbName             = STRING -- this one is a path
+tableName          = ID -- ('.csv')? dont know if could be convenient to add this
+columnName         = ID
+ID                 = ALPHA (ALPHA | DIGIT | '_' |)*
+ALPHA              = 'a'..'z' | 'A'..'Z'
+DIGIT              = '0'..'9'
+NUMBER             = '-'? DIGIT ('.' DIGIT+)?
+STRING             = ('"' | '\'') CHAR* ('"' | '\'')
+CHAR               = UNICODE chars except '"'
+orderType          = ASC | DESC
+
+
+--------------------------------------------------------------------------------
+Pseudocode that was useful on the interpreter (SELECT CLAUSE)
+        // SELECT MAX(edad+1) FROM alumnos
+        // Table new_table = new Table()
+        // ? for expression in clause.expression_list:
+        // new_table.addColumn(expression.toString());
+        // for row in table.getRows():
+        // this.currentRow = row
+        // Object value = evaluate(expression)
+        // new_table.addRow(expression.toString(), value)
+
+        // ? max(expression):
+        // max = 0
+        // for row in table.getRows():
+        // this.currentRow = row
+        // Object value = evaluate(expression)
+        // max = value if value > max else max
