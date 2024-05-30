@@ -75,7 +75,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
     public String deleteClause(Clause.DeleteClause clause) {
         // Implementation for DeleteClause printing
         StringBuilder builder = new StringBuilder();
-        builder.append("DELETE FROM ").append(clause.table_name).append(" ");
+        builder.append("DELETE FROM ").append(clause.table_name.lexeme).append(" ");
         if (clause.where_expression != null) {
             builder.append("WHERE ").append(printExpression(clause.where_expression)).append(" ");
         }
@@ -115,7 +115,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
             builder.append("* ");
         }
         if (clause.table_name != null) {
-            builder.append(" FROM ").append(clause.table_name).append(" ");
+            builder.append(" FROM ").append(clause.table_name.lexeme).append(" ");
         }
 
         if (clause.where_expression != null) {
@@ -156,7 +156,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
     @Override 
     public String createClause(Clause.CreateClause clause) {
         StringBuilder builder = new StringBuilder();
-        builder.append("CREATE TABLE ").append(clause.name).append(" ");
+        builder.append("CREATE TABLE ").append(clause.name.lexeme).append(" ");
         builder.append("(");
         for (int i = 0; i < clause.columnsDefinition.size(); i++) {
             builder.append(clause.columnsDefinition.get(i).get(0)).append(" ");
