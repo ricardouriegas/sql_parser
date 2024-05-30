@@ -194,7 +194,7 @@ public class Interpreter
         // check if the row has all the columns
         for (String columnName : columnNames) {
             if (!row.containsKey(columnName)) {
-                // TODO: when adding constraints we should validate id the column is nullable
+                // TODO: when adding constraints we should validate if the column is nullable
                 row.put(columnName, null);
             }
         }

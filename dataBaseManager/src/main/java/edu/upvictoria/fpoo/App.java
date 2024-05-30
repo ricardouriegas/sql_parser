@@ -90,6 +90,7 @@ public class App {
         // Interpret the given by the parser
         for (Clause clause : clauses) {
             // print the clause
+            System.out.println("Excecuting: " + clause.accept(new AstPrinter()));
             interpreter.interpret(clause);
             System.out.println();
         }
@@ -137,7 +138,8 @@ public class App {
             run(new String(bytes, Charset.defaultCharset()));
         } catch (Error e) {
             System.err.println(e.getMessage());
-        } catch (Exception e) {
+        } 
+        catch (Exception e) {
             System.err.println("Something goes wrong.");
         }
 

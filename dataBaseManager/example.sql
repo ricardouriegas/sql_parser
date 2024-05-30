@@ -1,8 +1,8 @@
 USE "/home/richy/";
 
-select distinct max(EMPLOYEE_ID) from EMPLOYEES;
+-- select distinct max(EMPLOYEE_ID) from EMPLOYEES; -- should result in an error if employees doesn'n exist
 
-CREATE TABLE example (
+CREATE TABLE example ( -- should return an error if example already exists
     id NUMBER PRIMARY KEY,
     name STRING,
     age NUMBER
@@ -67,5 +67,9 @@ select min(name) from example; -- should return the smallest lexical value
 select max(age) from example; -- should return the greatest numerical value
 select min(age) from example; -- should return the smallest numerical value
 
-select avg(name) from example; -- should return an error bc name is not a numerical value
-select round(name) from example; -- should return an error bc name is not a numerical value
+-- select avg(name) from example; -- should return an error bc name is not a numerical value
+-- select round(name) from example; -- should return an error bc name is not a numerical value
+
+select count(*) from example where name = 'Doe';
+
+select distinct name from example;

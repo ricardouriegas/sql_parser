@@ -56,7 +56,10 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         builder.append("UPDATE ").append(clause.table_name.lexeme).append(" ");
         builder.append("SET ");
         for (int i = 0; i < clause.valuesMap.size(); i++) {
-            builder.append(clause.valuesMap.get(i)).append(" = ");
+            // HashMap<String, Expression> valuesMap
+            Entry<String, Expression> entry = (Entry<String, Expression>) clause.valuesMap.entrySet().toArray()[i];
+            builder.append(entry.getKey()).append(" = ").append(printExpression(entry.getValue()));
+
             if (i != clause.valuesMap.size() - 1) {
                 builder.append(", ");
             }
@@ -85,12 +88,24 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         // Use StringBuilder to construct the string representation
         StringBuilder builder = new StringBuilder();
         builder.append("SELECT ");
+
         if (clause.columns != null) {
             if (clause.columns.getY()) {
-                builder.append("* ");
+                builder.append("DISTINCT ");
             } else {
                 for (int i = 0; i < clause.columns.getX().size(); i++) {
-                    builder.append(clause.columns.getX().get(i).getY().lexeme);
+                    // Pair<List<Pair<Expression, Token>>, Boolean> columns
+                    List<Pair<Expression, Token>> pair = clause.columns.getX();
+                    for (int j = 0; j < pair.size(); j++) {
+                        if (pair.get(j).getY() == null) 
+                            builder.append(pair.get(j).getX().accept(this));
+                        else
+                            builder.append(pair.get(j).getX().accept(this)).append(" AS ").append(pair.get(j).getY().lexeme);
+                        if (j != pair.size() - 1) {
+                            builder.append(", ");
+                        }
+                    }
+
                     if (i != clause.columns.getX().size() - 1) {
                         builder.append(", ");
                     }
@@ -100,7 +115,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
             builder.append("* ");
         }
         if (clause.table_name != null) {
-            builder.append("FROM ").append(clause.table_name).append(" ");
+            builder.append(" FROM ").append(clause.table_name).append(" ");
         }
 
         if (clause.where_expression != null) {
@@ -123,10 +138,13 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         // Implementation for InsertClause printing
         StringBuilder builder = new StringBuilder();
         builder.append("INSERT INTO ").append(clause.token.lexeme).append(" ");
-        builder.append("(").append(String.join(", ", clause.valuesMap.keySet())).append(") ");
+        
         builder.append("VALUES (");
         for (int i = 0; i < clause.valuesMap.size(); i++) {
-            builder.append(printExpression(clause.valuesMap.get(i)));
+            // HashMap<String, Expression> valuesMap
+            Entry<String, Expression> entry = (Entry<String, Expression>) clause.valuesMap.entrySet().toArray()[i];
+            builder.append(entry.getKey()).append(" = ").append(printExpression(entry.getValue()));
+
             if (i != clause.valuesMap.size() - 1) {
                 builder.append(", ");
             }
