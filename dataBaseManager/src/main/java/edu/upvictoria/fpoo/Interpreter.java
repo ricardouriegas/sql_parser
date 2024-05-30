@@ -59,6 +59,11 @@ public class Interpreter
             ErrorHandler.error("The path" + clause.path + " does not exist");
         }
 
+        // verify write access to the folder
+        if (!Files.isWritable(pathy)) {
+            ErrorHandler.error("You do not have write access to the folder");
+        }
+
         // set the path
         // this.path = path;
         this.folder = pathy;
@@ -562,10 +567,12 @@ public class Interpreter
         File folder = new File(this.folder.toString());
         File[] files = folder.listFiles();
 
+        // check if the folder is empty
         if (files.length == 0) {
             ErrorHandler.error("The database (folder) is empty");
         }
 
+        // check for csv's
         for (File file : files) {
             if (file.getName().endsWith(".csv")) {
                 System.out.println(file.getName().replace(".csv", ""));
