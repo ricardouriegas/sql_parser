@@ -1,6 +1,6 @@
 package edu.upvictoria.fpoo;
 // AS, MOD, SHOW, DIV, UCASE, FLOOR, ROUND, RAND, COUNT, DISTINCT, MIN, MAX, SUM, AVG
-enum TokenType {
+public enum TokenType {
     
     // Data Types for CREATE and string
     NUMBER_DATA_TYPE, BOOLEAN_DATA_TYPE, DATE_DATA_TYPE, STRING_DATA_TYPE,

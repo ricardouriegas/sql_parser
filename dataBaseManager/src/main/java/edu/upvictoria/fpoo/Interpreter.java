@@ -30,7 +30,7 @@ public class Interpreter
     Table table;
     HashMap<String, Object> currentRow = null;
 
-    void interpret(Clause clause) {
+    public void interpret(Clause clause) {
         excecute(clause);
     }
 
@@ -520,7 +520,10 @@ public class Interpreter
      */
     private Object evaluateClause(Expression expr) {
 
-        // if is one of the aggregation functions
+        // check if theres a function call
+        if (AGGREGATION_FUNCTIONS.contains(expr)) {
+            return expr.accept(this);
+        }
         if (expr instanceof Expression.FunctionCall &&
                 AGGREGATION_FUNCTIONS.contains(
                         ((Expression.FunctionCall) expr).name.type)) {
@@ -531,15 +534,6 @@ public class Interpreter
             HashMap<String, Object> row = new HashMap<String, Object>();
             table.addRow(row);
         }
-        // ? Deprecated (it was supposed to check if the column exists in the table)
-        // //List<String> columnNames = table.getColumnNames();
-
-        // // verify if the column exists
-        // // if (expr instanceof Expression.Literal) {
-        // // if (!columnNames.contains(expr.toString())) {
-        // // ErrorHandler.error("The column " + expr.toString() + " does not exist");
-        // // }
-        // // }
 
         // if is a function call
         List<Object> values = new ArrayList<Object>();

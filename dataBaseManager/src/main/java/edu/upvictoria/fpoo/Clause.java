@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-abstract class Clause {
+public abstract class Clause {
     interface Visitor<R> {
         R useClause(UseClause clause);
 
@@ -31,6 +31,7 @@ abstract class Clause {
         }
 
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.useClause(this);
         }
@@ -45,6 +46,7 @@ abstract class Clause {
         }
 
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.createClause(this);
         }
@@ -53,7 +55,7 @@ abstract class Clause {
         final List<List<String>> columnsDefinition;
     }
 
-    static class SelectClause extends Clause {
+    public static class SelectClause extends Clause {
         SelectClause(Pair<List<Pair<Expression, Token>>, Boolean> columns, Token table_name, Expression where_expression, List<String> columns_order,
                 int limit) {
             this.columns = columns;
@@ -64,6 +66,7 @@ abstract class Clause {
         }
 
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.selectClause(this);
         }
@@ -81,6 +84,7 @@ abstract class Clause {
         }
         
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.dropClause(this);
         }
@@ -95,6 +99,7 @@ abstract class Clause {
         }
         
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.insertClause(this);
         }
@@ -113,6 +118,7 @@ abstract class Clause {
         }
         
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.updateClause(this);
         }
@@ -131,6 +137,7 @@ abstract class Clause {
         }
 
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.deleteClause(this);
         }
@@ -146,6 +153,7 @@ abstract class Clause {
         }
 
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return null;
         }
@@ -158,11 +166,12 @@ abstract class Clause {
         }
 
         @Override
+        public
         <R> R accept(Visitor<R> visitor) {
             return visitor.showClause();
         }
     }
     
 
-    abstract <R> R accept(Visitor<R> visitor);
+    public abstract <R> R accept(Visitor<R> visitor);
 }

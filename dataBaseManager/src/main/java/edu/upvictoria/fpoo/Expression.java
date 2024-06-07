@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Here we use metaprogramming to make thee code more dynamiccc
  */
-abstract class Expression {
+public abstract class Expression {
   interface Visitor<R> {
     R visitBinaryExpression(Binary expr);
     R visitGroupingExpression(Grouping expr);

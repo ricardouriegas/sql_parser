@@ -38,10 +38,10 @@ public class App {
             runPrompt();
         } else if (args.length == 1) { // to run a file like in python
             runFile(args[0]);
+        } else { 
+            System.out.println("Usage: java -jar file_name.jar [script]");
+            System.exit(64);  
         }
-        // else { // to run a file but with the -D and -f flags
-        // runFile(args);
-        // }
     }
 
     private static void runPrompt() throws IOException {
@@ -94,42 +94,6 @@ public class App {
             System.out.println();
         }
     }
-
-    /**
-     * for now we are not going to use this method (i prefer to use the other one,
-     * is just simpler and intuitive)
-     * private static void runFile(String[] args) throws IOException {
-     * // `java App -D[0] path[1] -f[2] file.sql[3]
-     * // -D /home/richy/ -f /home/richy/ejemplo.sql
-     * 
-     * if (args[0].equals("-D") && args[2].equals("-f")) {
-     * Path folder = Paths.get(args[1]);
-     * 
-     * if (!Files.exists(folder)) {
-     * Files.createDirectory(folder);
-     * }
-     * 
-     * // Add the file to the folder
-     * // Path file = Paths.get(args[1] + args[3]);
-     * 
-     * 
-     * // interpret USE_CLAUSE with the path of the database
-     * Lexer algo = new Lexer("USE \"" + args[1] + "\";");
-     * List<Token> tokens2 = algo.scanTokens();
-     * Parser parser2 = new Parser(tokens2);
-     * Clause expression2 = parser2.parse();
-     * interpreter.interpret(expression2);
-     * 
-     * 
-     * 
-     * System.out.println("Everything was executed");
-     * 
-     * } else {
-     * ErrorHandler.error("Invalid arguments");
-     * }
-     * 
-     * }
-     */
 
     private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
