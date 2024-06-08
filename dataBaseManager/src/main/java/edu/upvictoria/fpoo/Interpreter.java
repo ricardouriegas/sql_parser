@@ -26,9 +26,17 @@ public class Interpreter
     private static final Set<TokenType> AGGREGATION_FUNCTIONS = new HashSet<TokenType>(Arrays.asList(
             COUNT, MIN, MAX, SUM, AVG));
     // variables
-    private Path folder;
+    private Path folder = null;
     Table table;
     HashMap<String, Object> currentRow = null;
+
+    /**
+     * Getter for folder
+     */
+
+    public Path getFolderPath() {
+        return folder;
+    }
 
     public void interpret(Clause clause) {
         excecute(clause);
