@@ -29,15 +29,31 @@ public class Interpreter
     private Path folder = null;
     Table table;
     HashMap<String, Object> currentRow = null;
+    private String result;
 
     /**
-     * Getter for folder
+     * Getter and setters
      */
-
-    public Path getFolderPath() {
+    public Path getDataBase() {
         return folder;
     }
+    
+    public void setDataBase(Path path) {
+        this.folder = path;
+    }
 
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    /**
+     * Interpret the clause
+     * @param clause
+     */
     public void interpret(Clause clause) {
         excecute(clause);
     }
@@ -76,6 +92,7 @@ public class Interpreter
         // this.path = path;
         this.folder = pathy;
         System.out.println("DataBase path set to: " + folder.toString());
+        result = "DataBase path set to: " + folder.toString();
 
         return null;
     }
@@ -104,6 +121,8 @@ public class Interpreter
 
         // save the table
         table.save(file);
+
+        result = "Rows deleted";
 
         return null;
     }
@@ -163,6 +182,8 @@ public class Interpreter
         // save the table
         table.save(file);
 
+        result = "Table " + clause.name.lexeme + " created";
+
         return null;
     }
 
@@ -217,6 +238,8 @@ public class Interpreter
         // save the table
         table.save(file);
 
+        result = "Row inserted";
+
         return null;
     }
 
@@ -243,6 +266,8 @@ public class Interpreter
 
         // save the table
         table.save(file);
+
+        result = "Row updated";
 
         return null;
     }
@@ -287,6 +312,8 @@ public class Interpreter
         // delete the file
         file.toFile().delete();
 
+        result = "Table " + clause.token.lexeme + " deleted";
+
         return null;
     }
 
@@ -314,6 +341,8 @@ public class Interpreter
 
         // print the table
         table.print();
+
+        result = table.toString();
 
         // reset the table
         table = null;
@@ -575,11 +604,15 @@ public class Interpreter
         }
 
         // check for csv's
+        StringBuilder sb = new StringBuilder();
         for (File file : files) {
             if (file.getName().endsWith(".csv")) {
+                sb.append(file.getName().replace(".csv", "") + "\n");
                 System.out.println(file.getName().replace(".csv", ""));
             }
         }
+
+        result = sb.toString();
 
         return null;
     }

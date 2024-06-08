@@ -465,5 +465,17 @@ public class Table {
         // write the column names at the beginning of the table
         columnNames = columnName;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(columnNames);
+        sb.append("\n");
+        for (HashMap<String, Object> row : table) {
+            sb.append(row);
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
     
 }
