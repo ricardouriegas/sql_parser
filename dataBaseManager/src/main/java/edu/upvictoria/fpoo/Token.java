@@ -2,23 +2,29 @@ package edu.upvictoria.fpoo;
 
 
 public class Token {
-    final TokenType type;
-    final String lexeme;
-    final Object literal;
-    final int line;
-    final int[] range = new int[2];
+    public final TokenType type;
+    public final String lexeme;
+    public final Object literal;
+    public final int line;
+    public final int start;
+    public final int end;
 
     Token(TokenType type, String lexeme, Object literal, int line, int start, int end) {
         this.type = type;
         this.lexeme = lexeme;
         this.literal = literal;
         this.line = line;
-        this.range[0] = start;
-        this.range[1] = end;
+        this.start = start;
+        this.end = end;
     }
 
     public String toString() {
-        return type + " " + lexeme + " " + literal + " " + line;
+        return "Type: " + type + 
+               "\nLexeme: " + lexeme + 
+               "\nLiteral: " + literal + 
+               "\nLine: " + line + 
+               "\nStart: " + start + 
+               "\nEnd: " + end;
     }
 
 }

@@ -58,6 +58,11 @@ public class App {
                 Lexer lexer = new Lexer(line);
                 List<Token> tokens = lexer.scanTokens();
 
+                for (Token token : tokens) {
+                    System.out.println(token);
+                    System.out.println("--------------------");
+                }
+
                 // Parse the token given by the lexer
                 Parser parser = new Parser(tokens);
                 List<Clause> expressions = parser.parse();
@@ -68,9 +73,9 @@ public class App {
                 // }
 
                 // Interpret the given by the parser
-                for (Clause expression : expressions) {
-                    interpreter.interpret(expression);
-                }
+                // for (Clause expression : expressions) {
+                //     interpreter.interpret(expression);
+                // }
             } catch (Error e) {
                 System.err.println(e.getMessage());
             } catch (Exception e) {

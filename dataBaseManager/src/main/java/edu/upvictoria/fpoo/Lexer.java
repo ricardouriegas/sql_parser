@@ -21,8 +21,6 @@ public class Lexer {
     private int start = 0;
     private int current = 0;
     private int line = 1;
-    private int startColumn = 0;
-    private int endColumn = 0;
 
     // Map of SQL keywords
     private static final Map<String, TokenType> keywords;
@@ -107,12 +105,11 @@ public class Lexer {
         while (!isAtEnd()) {
             // We are at the beginning of the next lexeme.
             start = current;
-            startColumn = endColumn;
 
             scanToken();
         }
 
-        tokens.add(new Token(TokenType.EOF, "", null, line, startColumn, endColumn));
+        tokens.add(new Token(TokenType.EOF, "", null, line, start, current));
         return tokens;
     }
 
@@ -121,7 +118,6 @@ public class Lexer {
      */
     private void scanToken() {
         char c = advance();
-        endColumn = current;
         switch (c) {
             case '(':
                 addToken(LEFT_PAREN);
@@ -363,7 +359,7 @@ public class Lexer {
         if (type == NULL)
             text = null;
 
-        tokens.add(new Token(type, text, literal, line, startColumn, endColumn));
+        tokens.add(new Token(type, text, literal, line, start, current));
     }
 
     /**
