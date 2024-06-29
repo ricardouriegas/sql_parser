@@ -109,7 +109,7 @@ public class Lexer {
             scanToken();
         }
 
-        tokens.add(new Token(TokenType.EOF, "", null, line, start, current));
+        tokens.add(new Token(TokenType.EOF, "", null, line, current, current));
         return tokens;
     }
 
@@ -163,6 +163,9 @@ public class Lexer {
                 break;
             case '|':
                 addToken(match('|') ? PIPE_PIPE : null);
+                break;
+            case '.':
+                addToken(DOT);
                 break;
             case '%':
                 addToken(PORCENTAJE);
