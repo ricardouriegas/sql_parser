@@ -1,6 +1,6 @@
-package edu.upvictoria.fpoo;
+package edu.upvictoria.fpoo.SQL;
 
-import static edu.upvictoria.fpoo.TokenType.*;
+import static edu.upvictoria.fpoo.SQL.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
