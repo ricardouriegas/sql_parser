@@ -2,7 +2,7 @@ package edu.upvictoria.fpoo.SQL;
 // AS, MOD, SHOW, DIV, UCASE, FLOOR, ROUND, RAND, COUNT, DISTINCT, MIN, MAX, SUM, AVG
 public enum TokenType {
     
-    // Data Types for CREATE and string
+    // Data Types for CREATE 
     NUMBER_DATA_TYPE, BOOLEAN_DATA_TYPE, DATE_DATA_TYPE, STRING_DATA_TYPE,
     
     // Data Definition (DDL)
