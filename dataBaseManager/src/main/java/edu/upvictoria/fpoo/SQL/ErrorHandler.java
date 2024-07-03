@@ -11,7 +11,7 @@ public class ErrorHandler {
      * @param line
      * @param message
      */
-    static void error(int line, String message) {
+    public static void error(int line, String message) {
         report(line, "", message);
     }
 
@@ -20,7 +20,7 @@ public class ErrorHandler {
      * @param token
      * @param message
      */
-    static void error(Token token, String message) {
+    public static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
             report(token.line, " at end", message);
         } else {
@@ -32,7 +32,7 @@ public class ErrorHandler {
      * This one is for the interpreter
      * @param message
      */
-    static void error(String message) {
+    public static void error(String message) {
         throw new Error(message);
     }
 
