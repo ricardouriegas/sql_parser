@@ -98,4 +98,46 @@ public class XMLLexerTest {
         
     }
 
+    /**
+     * Test DTD declaration with XML content
+     */
+    @Test
+    public void testScanTokens3() {
+        Lexer lexer = new Lexer("<!DOCTYPE foo SYSTEM \"foo.dtd\"><foo>hola</foo>");
+        List<Token> tokens = lexer.scanTokens();
+
+        assertEquals(16, tokens.size()); // 15 tokens + EOF
+        assertEquals(LEFT_ANGLE, tokens.get(0).type);
+        assertEquals(EXCLAMATION, tokens.get(1).type);
+        assertEquals(DOCTYPE, tokens.get(2).type);
+        assertEquals(IDENTIFIER, tokens.get(3).type);
+        assertEquals(SYSTEM, tokens.get(4).type);
+        assertEquals(STRING, tokens.get(5).type);
+        assertEquals(RIGHT_ANGLE, tokens.get(6).type);
+        assertEquals(LEFT_ANGLE, tokens.get(7).type);
+        assertEquals(IDENTIFIER, tokens.get(8).type);
+        assertEquals(RIGHT_ANGLE, tokens.get(9).type);
+        assertEquals(IDENTIFIER, tokens.get(10).type);
+        assertEquals(LEFT_ANGLE, tokens.get(11).type);
+        assertEquals(SLASH, tokens.get(12).type);
+        assertEquals(IDENTIFIER, tokens.get(13).type);
+        assertEquals(RIGHT_ANGLE, tokens.get(14).type);
+
+        assertEquals("<", tokens.get(0).lexeme);
+        assertEquals("!", tokens.get(1).lexeme);
+        assertEquals("DOCTYPE", tokens.get(2).lexeme);
+        assertEquals("foo", tokens.get(3).lexeme);
+        assertEquals("SYSTEM", tokens.get(4).lexeme);
+        assertEquals("\"foo.dtd\"", tokens.get(5).lexeme);
+        assertEquals(">", tokens.get(6).lexeme);
+        assertEquals("<", tokens.get(7).lexeme);
+        assertEquals("foo", tokens.get(8).lexeme);
+        assertEquals(">", tokens.get(9).lexeme);
+        assertEquals("hola", tokens.get(10).lexeme);
+        assertEquals("<", tokens.get(11).lexeme);
+        assertEquals("/", tokens.get(12).lexeme);
+        assertEquals("foo", tokens.get(13).lexeme);
+        assertEquals(">", tokens.get(14).lexeme);
+    }
+
 }
