@@ -27,7 +27,31 @@ public class Lexer {
 
     static {
         keywords = new HashMap<>();
-        // keywords.put("NUMBER", NUMBER_DATA_TYPE);
+        
+        // DTD keywords
+        keywords.put("ELEMENT", ELEMENT);
+        keywords.put("ATTLIST", ATTLIST);
+        keywords.put("ENTITY", ENTITY);
+        keywords.put("NOTATION", NOTATION);
+        keywords.put("REQUIRED", REQUIRED);
+        keywords.put("IMPLIED", IMPLIED);
+        keywords.put("FIXED", FIXED);
+        keywords.put("PUBLIC", PUBLIC);
+        keywords.put("SYSTEM", SYSTEM);
+        keywords.put("NDATA", NDATA);
+
+        // XML keywords
+        keywords.put("XML", XML);
+        keywords.put("VERSION", VERSION);
+        keywords.put("ENCODING", ENCODING);
+        keywords.put("STANDALONE", STANDALONE);
+        keywords.put("DOCTYPE", DOCTYPE);
+        keywords.put("CDATA", CDATA);
+        keywords.put("COMMENT", COMMENT);
+        keywords.put("ENTITYREF", ENTITYREF);
+        keywords.put("CHARREF", CHARREF);
+        keywords.put("PI", PI);
+        keywords.put("XMLNS", XMLNS);
          
     }
 
@@ -77,6 +101,9 @@ public class Lexer {
             case '/':
                 addToken(SLASH);
                 break;
+            case '!':
+                addToken(EXCLAMATION);
+                break;
             case ' ':
             case '\r':
             case '\t':
@@ -114,9 +141,9 @@ public class Lexer {
 
         // see if it matches anything in the map
         String text = query.substring(start, current);
-        TokenType type = keywords.get(text);
+        TokenType type = keywords.get(text.toUpperCase()); // see if it matches any keyword in uppercase
         
-        if (type == null)
+        if (type == null)  
             type = IDENTIFIER;
 
         addToken(type, text); 

@@ -1,7 +1,5 @@
 package edu.upvictoria.fpoo.XML;
 
-import java.security.Identity;
-
 public enum TokenType {
     LEFT_PAREN, RIGHT_PAREN,
 
@@ -10,6 +8,15 @@ public enum TokenType {
     IDENTIFIER,
 
     NUMBER, STRING,
+
+    // Symbols
+    EXCLAMATION, 
+
+    // DTD keywords
+    ELEMENT, ATTLIST, ENTITY, NOTATION, REQUIRED, IMPLIED, FIXED, PUBLIC, SYSTEM, NDATA,
+
+    // XML keywords
+    XML, VERSION, ENCODING, STANDALONE, DOCTYPE, CDATA, COMMENT, ENTITYREF, CHARREF, PI, XMLNS,
 
     EOF
 }
