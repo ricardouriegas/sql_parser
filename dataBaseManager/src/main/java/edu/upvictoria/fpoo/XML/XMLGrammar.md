@@ -1,11 +1,73 @@
 # XML Context-Free Grammar
 
-> Based on [W3C XML 1.0](https://www.w3.org/TR/REC-xml/)
-
+<!-- DTD will gonna be implement in future -->
 ## XML document
 
 ```CFG
-document ::= prolog element
-```
+# XML document
+Document ::= Prolog Element
 
-<!-- TODO: complete the CFG -->
+# Prolog
+Prolog ::= '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
+
+# VersionInfo
+VersionInfo ::= S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
+
+# VersionNum
+VersionNum ::= '1.0'
+
+# EncodingDecl
+EncodingDecl ::= S 'encoding' Eq ('"' EncName '"' | "'" EncName "'")
+
+# EncName
+EncName ::= [A-Za-z] ([A-Za-z0-9._] | '-')*
+
+# SDDecl
+SDDecl ::= S 'standalone' Eq ('"' ('yes' | 'no') '"' | "'" ('yes' | 'no') "'")
+
+# Element
+Element ::= EmptyElemTag | STag Content ETag
+
+# EmptyElemTag
+EmptyElemTag ::= '<' Name (S Attribute)* S? '/>'
+# STag
+STag ::= '<' Name (S Attribute)* S? '>'
+# ETag
+ETag ::= '</' Name S? '>'
+# Attribute
+Attribute ::= Name Eq AttValue
+# Eq
+Eq ::= S? '=' S?
+# AttValue
+AttValue ::= '"' ([^<&"] | Reference)* '"' | "'" ([^<&'] | Reference)* "'"
+# Reference
+Reference ::= EntityRef | CharRef
+# EntityRef
+EntityRef ::= '&' Name ';'
+# CharRef
+CharRef ::= '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
+# Name
+Name ::= [A-Za-z] ([A-Za-z0-9._] | '-')*
+# S
+S ::= [ \t\n\r]+
+# Content
+Content ::= CharData? ((Element | Reference | CDSect | PI | Comment) CharData?)*
+# CharData
+CharData ::= [^<&]* - ([^<&]* ']]>' [^<&]*)
+# CDSect
+CDSect ::= CDStart CData CDEnd
+# CDStart
+CDStart ::= '<![CDATA['
+# CData
+CData ::= [^]]* - ([^]]* ']]>' [^]]*)
+# CDEnd
+CDEnd ::= ']]>'
+# PI
+PI ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
+# PITarget
+PITarget ::= Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
+# Comment
+Comment ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
+
+
+```
