@@ -1,4 +1,4 @@
-package edu.upvictoria.fpoo;
+package edu.upvictoria.fpoo.SQL;
 
 import java.util.HashMap;
 import java.util.List;

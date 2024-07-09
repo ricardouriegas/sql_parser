@@ -1,4 +1,4 @@
-package edu.upvictoria.fpoo;
+package edu.upvictoria.fpoo.SQL;
 
 import java.util.List;
 import java.util.Map.Entry;

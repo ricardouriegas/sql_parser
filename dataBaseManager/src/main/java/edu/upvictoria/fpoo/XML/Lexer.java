@@ -1,15 +1,15 @@
-package edu.upvictoria.fpoo;
-
-import static edu.upvictoria.fpoo.TokenType.*;
+package edu.upvictoria.fpoo.XML;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * This object will be in charge of receive the SQL query and tokenize it
- */
+import edu.upvictoria.fpoo.SQL.ErrorHandler;
+
+import static edu.upvictoria.fpoo.XML.TokenType.*;
+import static edu.upvictoria.fpoo.SQL.ErrorHandler.*;
+
 public class Lexer {
     // The query to be tokenized
     private final String query;
@@ -27,65 +27,32 @@ public class Lexer {
 
     static {
         keywords = new HashMap<>();
-        keywords.put("NUMBER", NUMBER_DATA_TYPE);
-        keywords.put("STRING", STRING_DATA_TYPE);
-        keywords.put("BOOLEAN", BOOLEAN_DATA_TYPE);
-        keywords.put("DATE", DATE_DATA_TYPE); // TODO: Date should be date, but we are not handling dates bc thats no the purpose of the project
+        
+        // DTD keywords
+        keywords.put("ELEMENT", ELEMENT);
+        keywords.put("ATTLIST", ATTLIST);
+        keywords.put("ENTITY", ENTITY);
+        keywords.put("NOTATION", NOTATION);
+        keywords.put("REQUIRED", REQUIRED);
+        keywords.put("IMPLIED", IMPLIED);
+        keywords.put("FIXED", FIXED);
+        keywords.put("PUBLIC", PUBLIC);
+        keywords.put("SYSTEM", SYSTEM);
+        keywords.put("NDATA", NDATA);
 
-        keywords.put("TRUE", TRUE);
-        keywords.put("FALSE", FALSE);
-        keywords.put("PRIMARY", PRIMARY);
-        keywords.put("KEY", KEY);
-        keywords.put("UNIQUE", UNIQUE);
-        keywords.put("DATABASE", DATABASE);
-        keywords.put("TABLE", TABLE);
-
-        keywords.put("CREATE", CREATE);
-        keywords.put("DROP", DROP);
-        keywords.put("USE", USE);
-
-        keywords.put("SELECT", SELECT);
-        keywords.put("INSERT", INSERT);
-        keywords.put("UPDATE", UPDATE);
-        keywords.put("DELETE", DELETE);
-
-        keywords.put("WHERE", WHERE);
-        keywords.put("FROM", FROM);
-        keywords.put("ORDER", ORDER);
-        keywords.put("LIMIT", LIMIT);
-        keywords.put("VALUES", VALUES);
-        keywords.put("INTO", INTO);
-        keywords.put("AND", AND);
-        keywords.put("OR", OR);
-        keywords.put("NOT", NOT);
-        keywords.put("NULL", NULL);
-        keywords.put("ASC", ASC);
-        keywords.put("DESC", DESC);
-        keywords.put("NOT", NOT);
-        keywords.put("AS", AS);
-        keywords.put("SET", SET);
-        keywords.put("SHOW", SHOW);
-        keywords.put("GROUP", GROUP);
-        keywords.put("BY", COUNT);
-
-        // part 2 add functions
-        keywords.put("MOD", MOD);
-        keywords.put("DIV", DIV);
-        keywords.put("UCASE", UCASE);
-        keywords.put("LCASE", LCASE);
-        keywords.put("CAPITALIZE", CAPITALIZE);
-        keywords.put("FLOOR", FLOOR);
-        keywords.put("CEIL", CEIL);
-        keywords.put("ROUND", ROUND);
-        keywords.put("RAND", RAND);
-        keywords.put("COUNT", COUNT);
-        keywords.put("DISTINCT", DISTINCT);
-        keywords.put("MIN", MIN);
-        keywords.put("MAX", MAX);
-        keywords.put("SUM", SUM);
-        keywords.put("AVG", AVG);
-        keywords.put("IS", IS);
-        keywords.put("TABLES", TABLES);        
+        // XML keywords
+        keywords.put("XML", XML);
+        keywords.put("VERSION", VERSION);
+        keywords.put("ENCODING", ENCODING);
+        keywords.put("STANDALONE", STANDALONE);
+        keywords.put("DOCTYPE", DOCTYPE);
+        keywords.put("CDATA", CDATA);
+        keywords.put("COMMENT", COMMENT);
+        keywords.put("ENTITYREF", ENTITYREF);
+        keywords.put("CHARREF", CHARREF);
+        keywords.put("PI", PI);
+        keywords.put("XMLNS", XMLNS);
+         
     }
 
     /**
@@ -125,50 +92,17 @@ public class Lexer {
             case ')':
                 addToken(RIGHT_PAREN);
                 break;
-            case ',':
-                addToken(COMMA);
+            case '<':
+                addToken(LEFT_ANGLE);
                 break;
-            case '-':
-                if (match('-')) {
-                    // A comment goes until the end of the line.
-                    while (peek() != '\n' && !isAtEnd())
-                        advance();
-                } else {
-                    addToken(MINUS);
-                }
-                break;
-            case '+':
-                addToken(PLUS);
+            case '>':
+                addToken(RIGHT_ANGLE);
                 break;
             case '/':
                 addToken(SLASH);
                 break;
-            case '*': //? an asterisk can mean ALL if theres not a number after
-                addToken(STAR, '*');
-                break;
-            case ';':
-                addToken(SEMICOLON);
-                break;
             case '!':
-                addToken(match('=') ? BANG_EQUAL : BANG);
-                break;
-            case '=':
-                addToken(match('=') ? EQUAL_EQUAL : EQUAL);
-                break;
-            case '<':
-                addToken(match('=') ? LESS_EQUAL : LESS);
-                break;
-            case '>':
-                addToken(match('=') ? GREATER_EQUAL : GREATER);
-                break;
-            case '|':
-                addToken(match('|') ? PIPE_PIPE : null);
-                break;
-            case '.':
-                addToken(DOT);
-                break;
-            case '%':
-                addToken(PORCENTAJE);
+                addToken(EXCLAMATION);
                 break;
             case ' ':
             case '\r':
@@ -207,18 +141,12 @@ public class Lexer {
 
         // see if it matches anything in the map
         String text = query.substring(start, current);
-        TokenType type = keywords.get(text.toUpperCase());
+        TokenType type = keywords.get(text.toUpperCase()); // see if it matches any keyword in uppercase
         
-        if (type == null)
+        if (type == null)  
             type = IDENTIFIER;
-        
-        if (type == NULL)
-            addToken(type, null);
-        else
 
-        // the identifiers keywords (e.g. Keyword: AGE) must be saved in 
-        // uppercase so the comparisons work downstream 
-        addToken(type, text.toUpperCase()); 
+        addToken(type, text); 
     }
 
     
@@ -246,7 +174,7 @@ public class Lexer {
     }
 
     /**
-     * This method will scan the identifier
+     * This method will scan a number
      */
     private void number() {
         while (isDigit(peek()))
@@ -354,13 +282,6 @@ public class Lexer {
      */
     private void addToken(TokenType type, Object literal) {
         String text = query.substring(start, current);
-
-        // the strings are not uppercase
-        if (type != STRING)
-            text = text.toUpperCase();
-        
-        if (type == NULL)
-            text = null;
 
         tokens.add(new Token(type, text, literal, line, start, current));
     }

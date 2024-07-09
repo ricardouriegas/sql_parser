@@ -1,4 +1,4 @@
-package edu.upvictoria.fpoo;
+package edu.upvictoria.fpoo.SQL;
 
 
 public class Token {
@@ -9,7 +9,7 @@ public class Token {
     public final int start;
     public final int end;
 
-    Token(TokenType type, String lexeme, Object literal, int line, int start, int end) {
+    public Token(TokenType type, String lexeme, Object literal, int line, int start, int end) {
         this.type = type;
         this.lexeme = lexeme;
         this.literal = literal;

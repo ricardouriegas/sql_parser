@@ -10,10 +10,16 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 
+import edu.upvictoria.fpoo.SQL.AstPrinter;
+import edu.upvictoria.fpoo.SQL.Clause;
+import edu.upvictoria.fpoo.SQL.Interpreter;
+import edu.upvictoria.fpoo.SQL.Lexer;
+import edu.upvictoria.fpoo.SQL.Parser;
+import edu.upvictoria.fpoo.SQL.Token;
+
 /**
  * Somthing i need to say:
- * I take order by has order_by (with the underscore) the same with NOT_NULL
- * And i make all the sentence in uppercase
+ * I make all the sentence to uppercase expects everything is inside quotes
  * This is a First Practice and it doesnt need to validate things so dates are not validated to be treaten as dates
  * I use only the doble quotes ("") for the strings not the single quotes ('')
  */
@@ -58,11 +64,6 @@ public class App {
                 Lexer lexer = new Lexer(line);
                 List<Token> tokens = lexer.scanTokens();
 
-                for (Token token : tokens) {
-                    System.out.println(token);
-                    System.out.println("--------------------");
-                }
-
                 // Parse the token given by the lexer
                 Parser parser = new Parser(tokens);
                 List<Clause> expressions = parser.parse();
@@ -73,9 +74,9 @@ public class App {
                 // }
 
                 // Interpret the given by the parser
-                // for (Clause expression : expressions) {
-                //     interpreter.interpret(expression);
-                // }
+                for (Clause expression : expressions) {
+                    interpreter.interpret(expression);
+                }
             } catch (Error e) {
                 System.err.println(e.getMessage());
             } catch (Exception e) {

@@ -1,4 +1,4 @@
-package edu.upvictoria.fpoo;
+package edu.upvictoria.fpoo.SQL;
 
 public class Pair <X, Y> {
     private X x;

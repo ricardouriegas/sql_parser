@@ -3,8 +3,12 @@ package edu.upvictoria.fpoo;
 import java.util.*;
 
 import org.junit.Test;
+
+import edu.upvictoria.fpoo.SQL.Lexer;
+import edu.upvictoria.fpoo.SQL.Token;
+
+import static edu.upvictoria.fpoo.SQL.TokenType.*;
 import static org.junit.Assert.*;
-import static edu.upvictoria.fpoo.TokenType.*;
 
 public class LexerTest {
         /**
