@@ -4,10 +4,10 @@ import java.util.*;
 
 import org.junit.Test;
 
+import edu.upvictoria.fpoo.DTD.Token;
 import edu.upvictoria.fpoo.XML.Lexer;
-import edu.upvictoria.fpoo.XML.Token;
 
-import static edu.upvictoria.fpoo.XML.TokenType.*;
+import static edu.upvictoria.fpoo.DTD.TokenType.*;
 import static org.junit.Assert.*;
 
 public class XMLLexerTest {

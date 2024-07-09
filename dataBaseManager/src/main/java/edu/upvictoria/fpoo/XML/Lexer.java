@@ -5,9 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.upvictoria.fpoo.DTD.Token;
+import edu.upvictoria.fpoo.DTD.TokenType;
 import edu.upvictoria.fpoo.SQL.ErrorHandler;
 
-import static edu.upvictoria.fpoo.XML.TokenType.*;
+import static edu.upvictoria.fpoo.DTD.TokenType.*;
 import static edu.upvictoria.fpoo.SQL.ErrorHandler.*;
 
 public class Lexer {

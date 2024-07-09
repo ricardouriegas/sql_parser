@@ -1,5 +1,4 @@
-package edu.upvictoria.fpoo.XML;
-
+package edu.upvictoria.fpoo.DTD;
 
 public class Token {
     public final TokenType type;

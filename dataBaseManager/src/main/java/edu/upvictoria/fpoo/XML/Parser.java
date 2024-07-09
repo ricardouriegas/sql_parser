@@ -1,8 +1,11 @@
 package edu.upvictoria.fpoo.XML;
 
+import static edu.upvictoria.fpoo.DTD.TokenType.*;
+
 import java.util.*;
 
-import static edu.upvictoria.fpoo.XML.TokenType.*;
+import edu.upvictoria.fpoo.DTD.Token;
+import edu.upvictoria.fpoo.DTD.TokenType;
 
 /**
  * A parser really has two jobs:

@@ -1,5 +1,8 @@
 package edu.upvictoria.fpoo.XML;
 
+import edu.upvictoria.fpoo.DTD.Token;
+import edu.upvictoria.fpoo.DTD.TokenType;
+
 /**
  * This class will handle the errors on the libary
  */
