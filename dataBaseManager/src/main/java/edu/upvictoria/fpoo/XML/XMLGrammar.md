@@ -1,5 +1,7 @@
 # XML Context-Free Grammar
 
+<!-- TODO: Do the DTD CFG and erase XML things -->
+
 <!-- DTD will gonna be implement in future -->
 ## XML document
 
@@ -69,5 +71,10 @@ PITarget ::= Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
 # Comment
 Comment ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
 
+
+```
+
+```CFG
+Document    ::= Prolog Element Misc*
 
 ```
