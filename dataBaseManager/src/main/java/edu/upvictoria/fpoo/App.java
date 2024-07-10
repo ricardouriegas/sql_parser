@@ -5,10 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Scanner;
 
 import edu.upvictoria.fpoo.SQL.AstPrinter;
 import edu.upvictoria.fpoo.SQL.Clause;
@@ -43,10 +41,10 @@ public class App {
         if (args.length == 0) { // to run with prompting
             runPrompt();
         } else if (args.length == 1) { // to run a file like in python
-            runFile(args[0]);
+            runFile(args[0]);               
         } else { 
-            System.out.println("Usage: java -jar file_name.jar [script]");
-            System.exit(64);  
+            System.out.println("Usage: java -jar project.jar [script]");
+            System.exit(64);  // 64 is the error code for command line usage error
         }
     }
 
