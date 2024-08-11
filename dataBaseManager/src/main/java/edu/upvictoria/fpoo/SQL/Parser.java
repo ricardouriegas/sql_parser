@@ -86,7 +86,7 @@ public class Parser {
     /******************************** CREATE TABLE ******************************/
     /**************************************************************************/
 
-    // createTableStmnt = CREATE TABLE tableName '('columnDef (',' columnDef)*')'
+    // createTableStmnt = CREATE TABLE tableName '('columnDef | tableConstraint (',' columnDef | tableConstraint )*')'
     // tableName = ID
     // ID = ALPHA (ALPHA | DIGIT | '_' |)*
 
@@ -95,29 +95,98 @@ public class Parser {
         Token table_name = consume(IDENTIFIER, "Expected table name after CREATE TABLE.");
         consume(LEFT_PAREN, "Expected ( after table name.");
 
-        List<List<String>> columnDefinition = new ArrayList<>();
+        List<List<Object>> columnDefinition = new ArrayList<>();
+        List<Object> tableConstraints = new ArrayList<>();
+
         while (!check(RIGHT_PAREN)) {
-            columnDefinition.add(columnDefinition());
+            if (match(PRIMARY, FOREIGN, UNIQUE, CHECK)) {
+                tableConstraints.add(tableConstraint());
+                continue;
+            } else {
+                columnDefinition.add(columnDefinition());
+            }
+
             if (!match(COMMA))
                 break;
         }
 
         consume(RIGHT_PAREN, "Expected ) after column definitions.");
 
-        return new Clause.CreateClause(table_name, columnDefinition);
+        return new Clause.CreateClause(table_name, columnDefinition, tableConstraints);
     }
 
-    // columnDef = columnName dataType (constraint)?
-    private List<String> columnDefinition() {
+    // tableConstraint = PRIMARY KEY `(` columnName `)`
+    //                  | FOREING KEY `(` columnName `)` REFERENCES tableName `(` columnName `)`
+    //                  | UNIQUE KEY `(` columnName `)`
+    //                  | CHECK `(` expression `)`
+    private Object tableConstraint() {
+        if (check(PRIMARY)) { //? String -> <column_name>
+            consume(PRIMARY, "Expected keyword PRIMARY after PRIMARY KEY.");
+            consume(KEY, "Expected keyword KEY after PRIMARY.");
+
+            consume(LEFT_PAREN, "Expected ( after PRIMARY KEY.");
+            Token column_name = consume(IDENTIFIER, "Expected column name after (.");
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return "PRIMARY KEY" + column_name.lexeme;
+        }
+
+        if (check(FOREIGN)) { //? List<Token> -> <column_name, table_name, column_name>
+            consume(FOREIGN, "Expected keyword FOREIGN after FOREIGN KEY.");
+            consume(KEY, "Expected keyword KEY after FOREIGN.");
+
+            consume(LEFT_PAREN, "Expected ( after FOREIGN KEY.");
+            List<Token> fList = new ArrayList<>();
+            fList.add(consume(IDENTIFIER, "Expected column name after (."));
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            consume(REFERENCES, "Expected keyword REFERENCES after column name.");
+            fList.add(consume(IDENTIFIER, "Expected table name after REFERENCES."));
+
+            consume(LEFT_PAREN, "Expected ( after table name.");
+            fList.add(consume(IDENTIFIER, "Expected column name after (."));
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return fList;
+        }
+
+        if (check(UNIQUE)) { //? String -> <column_name>
+            consume(UNIQUE, "Expected keyword UNIQUE after UNIQUE.");
+
+            consume(LEFT_PAREN, "Expected ( after UNIQUE.");
+            Token column_name = consume(IDENTIFIER, "Expected column name after (.");
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return "UNIQUE" + column_name.lexeme;
+        }
+
+        if (check(CHECK)) { //? Pair<Token, Expression> -> <column_name, expression>
+            consume(CHECK, "Expected keyword CHECK after CHECK.");
+            consume(LEFT_PAREN, "Expected ( after CHECK.");
+
+            Pair<Token, Expression> check = new Pair<>(); //? <column_name, expression>
+            check.setX(consume(IDENTIFIER, "Expected column name after (."));
+            check.setY(expression());
+
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return check;
+        }
+
+        throw error(peek(), "Expected constraint.");
+    }
+
+    // columnDef = columnName dataType (columnConstraint)*
+    private List<Object> columnDefinition() {
         Token column_name = consume(IDENTIFIER, "Expected column name.");
         String data_type = dataType();
 
-        List<String> result = new ArrayList<>();
+        List<Object> result = new ArrayList<>();
         result.add(column_name.lexeme);
         result.add(data_type);
-
+        
         while (true) {
-            String constraint = constraint();
+            Object constraint = columnConstraint();
             if (constraint == null)
                 break;
             result.add(constraint);
@@ -130,35 +199,116 @@ public class Parser {
     private String dataType() {
         if (match(NUMBER_DATA_TYPE))
             return "NUMBER";
-        if (match(STRING_DATA_TYPE))
+            if (match(STRING_DATA_TYPE))
             return "STRING";
         if (match(DATE_DATA_TYPE))
-            return "DATE";
+        return "DATE";
         if (match(BOOLEAN_DATA_TYPE))
             return "BOOLEAN";
 
         throw error(peek(), "Expected data type.");
     }
 
-    // constraint = NOT NULL | PRIMARY KEY | UNIQUE
-    private String constraint() {
-        if (match(PRIMARY)) {
-            if (match(KEY))
-                return "PRIMARY KEY";
-
-            throw error(peek(), "Expected KEY after PRIMARY.");
+    // columnConstraint = PRIMARY KEY
+    // | FOREIGN KEY REFERENCES tableName
+    // | UNIQUE
+    // | NOT NULL 
+    // | CHECK '(' expression ')'
+    private Object columnConstraint() {
+        if (check(PRIMARY)) { //? String -> <column_name>
+            consume(PRIMARY, "Expected keyword PRIMARY after PRIMARY KEY.");
+            consume(KEY, "Expected keyword KEY after PRIMARY.");
+            return "PRIMARY KEY";
         }
-        if (match(NOT)) {
-            if (match(NULL))
-                return "NOT NULL";
 
-            throw error(peek(), "Expected NULL after NOT.");
+        if (check(FOREIGN)){ //? List<Token> -> <column_name, table_name, column_name>
+            consume(FOREIGN, "Expected keyword FOREIGN after FOREIGN KEY.");
+            consume(KEY, "Expected keyword KEY after FOREIGN.");
+
+            consume(REFERENCES, "Expected keyword REFERENCES after FOREIGN KEY.");
+
+            List<Token> fList = new ArrayList<>();
+            fList.add(consume(IDENTIFIER, "Expected table name after REFERENCES."));
+
+            consume(LEFT_PAREN, "Expected ( after table name.");
+            fList.add(consume(IDENTIFIER, "Expected column name after (."));
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return fList;
         }
-        if (match(UNIQUE))
+
+        if (check(UNIQUE)) { //? String -> <column_name>
+            consume(UNIQUE, "Expected keyword UNIQUE after UNIQUE.");
             return "UNIQUE";
+        }
+
+        if (check(NOT)) { //? String -> <column_name>
+            consume(NOT, "Expected keyword NOT after NOT NULL.");
+            consume(NULL, "Expected keyword NULL after NOT.");
+            return "NOT NULL";
+        }
+
+        if (check(CHECK)) {//? Pair<Token, Expression> -> <column_name, expression>
+            consume(CHECK, "Expected keyword CHECK after CHECK.");
+            consume(LEFT_PAREN, "Expected ( after CHECK.");
+
+            Pair<Token, Expression> check = new Pair<>(); //? <column_name, expression>
+            check.setX(consume(IDENTIFIER, "Expected column name after (."));
+            check.setY(expression());
+
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return check;
+        }
 
         return null;
     }
+
+    // primaryKey = PRIMARY KEY
+    private String primaryKeyColumn() {
+        consume(PRIMARY, "Expected keyword PRIMARY after PRIMARY KEY.");
+        consume(KEY, "Expected keyword KEY after PRIMARY.");
+        return "PRIMARY KEY";
+    }
+
+    // foreignKey = FOREIGN KEY REFERENCES tableName
+    private Object foreignKeyColumn() {
+        consume(FOREIGN, "Expected keyword FOREIGN after FOREIGN KEY.");
+        consume(KEY, "Expected keyword KEY after FOREIGN.");
+        consume(REFERENCES, "Expected keyword REFERENCES after FOREIGN KEY.");
+        return consume(IDENTIFIER, "Expected table name after REFERENCES.");
+    }
+
+    // uniqueKey = UNIQUE
+    private String uniqueKeyColumn() {
+        consume(UNIQUE, "Expected keyword UNIQUE after UNIQUE.");
+        return "UNIQUE";
+    }
+    
+    // notNull = NOT NULL '(' columnName ')'
+    private String notNullColumn() {
+        String column_name = previous().lexeme;
+
+        consume(NOT, "Expected keyword NOT after NOT NULL.");
+        consume(NULL, "Expected keyword NULL after NOT.");
+
+        return "NOT NULL" + column_name;
+    }
+
+    // check = CHECK '(' columnName (expression) ')'
+    private Object checkColumn() {
+        consume(CHECK, "Expected keyword CHECK after CHECK.");
+        consume(LEFT_PAREN, "Expected ( after CHECK.");
+
+        Pair<Token, Expression> check = new Pair<>(); //? <column_name, expression>
+        check.setX(consume(IDENTIFIER, "Expected column name after (."));
+        check.setY(expression());
+
+        consume(RIGHT_PAREN, "Expected ) after column name.");
+        
+        return check;
+    }
+
 
     /**************************************************************************/
     /******************************** DROP TABLE ******************************/
@@ -173,8 +323,7 @@ public class Parser {
     /**************************************************************************/
     /******************************** SELECT **********************************/
     /**************************************************************************/
-    // selectStmnt = selectClause (fromClause)? (whereClause)? (groupbyClause)?
-    // (orderbyClause)? (limitClause)?
+    // selectStmnt = selectClause (fromClause)? (whereClause)? (groupbyClause)? (orderbyClause)? (limitClause)?
     // whereClause = WHERE expression
     // groupbyClause = GROUP BY expression (',' expression)*
     // orderbyClause = ORDER BY expression (',' expression)*
@@ -247,7 +396,6 @@ public class Parser {
         column = new Pair<>(expression(), null);
         if (match(AS)) {
             if (match(IDENTIFIER))
-                // alias = previous();
                 columns.add(new Pair<>(column.getX(), previous()));
             else
                 ErrorHandler.error(peek(), "Expected alias after AS.");
@@ -256,7 +404,6 @@ public class Parser {
         }
 
         while (match(COMMA)) {
-            // columns.add(new Pair<>(expression(), alias));
             column = new Pair<>(expression(), null);
             if (match(AS)) {
                 if (match(IDENTIFIER))
@@ -273,12 +420,6 @@ public class Parser {
 
     // fromClause = FROM (tableName | '(' selectStmnt ')')
     private Token fromClause() {
-        // if (match(LEFT_PAREN)) {
-        // Clause select = selectStmnt();
-        // consume(RIGHT_PAREN, "Expected ) after select statement.");
-        // return select;
-        // }
-
         return consume(IDENTIFIER, "Expected table name after FROM.");
     }
 
@@ -410,11 +551,9 @@ public class Parser {
         return left;
     }
 
-    // unaryExpression = ('-' unaryExpression) | funcCallExpression |
-    // primaryExpression
-    // funcCallExpression = funcName ('(' (expression (',' expression)*)? ')')*
-    // primaryExpression = TRUE | FALSE | NULL | NUMBER | STRING | ID | '*' |
-    // '(' expression ')'
+    // unaryExpression = ('-' unaryExpression) | funcCallExpression | primaryExpression
+    // funcCallExpression = funcName ('(' (expression (',' expression)*)? ')')* 
+    // primaryExpression = TRUE | FALSE | NULL | NUMBER | STRING | ID | '*' | '(' expression ')'
 
     // # Functions
     // funcName = UCASE | FLOOR | ROUND | RAND | COUNT | MIN | MAX | SUM | AVG
@@ -456,70 +595,6 @@ public class Parser {
         throw error(peek(), "Expected expression.");
 
     }
-
-    // private Expression funcCallExpression() {
-    // if (match(UCASE, FLOOR, ROUND, RAND, COUNT, MIN, MAX, SUM, AVG)) {
-    // Token funcName = previous();
-    // consume(LEFT_PAREN, "Expected ( after function name.");
-    // List<Expression> arguments = new ArrayList<>();
-    // if (!check(RIGHT_PAREN)) {
-    // arguments.add(expression());
-    // while (match(COMMA)) {
-    // arguments.add(expression());
-    // }
-    // }
-    // consume(RIGHT_PAREN, "Expected ) after function arguments.");
-    // return new Expression.FunctionCall(funcName, arguments);
-    // }
-
-    // throw error(peek(), "Expected expression.");
-    // }
-
-    // // <TERM>::= <FACTOR> (( "-" | "+" ) <FACTOR>)*
-    // private Expression term() {
-    // Expression left = factor();
-    // while (match(MINUS, PLUS)) {
-    // Token operator = previous();
-    // Expression right = factor();
-    // left = new Expression.Binary(left, operator, right);
-    // }
-    // return left;
-    // }
-
-    // // <FACTOR>::= <OPERAND> (( "/" | "*" ) <OPERAND>)*
-    // private Expression factor() {
-    // Expression left = operand();
-    // while (match(SLASH, STAR)) {
-    // Token operator = previous();
-    // Expression right = operand();
-    // left = new Expression.Binary(left, operator, right);
-    // }
-    // return left;
-    // }
-
-    // // <OPERAND>::= <NUMBER> | <STRING> | TRUE | FALSE | NULL | NOT NULL |
-    // // IDENTIFIER | "(" <EXPRESSION> ")"
-    // private Expression operand() {
-    // if (match(NUMBER, STRING, TRUE, FALSE, NULL, NOT)) {
-    // if (!match(NULL)) {
-    // if (prevwhereClause = WHERE expressionious().type == NOT) {
-    // consume(NULL, "Expected NULL after NOT.");
-    // }
-    // }
-    // return new Expression.Literal(previous().literal, false);
-    // }
-    // if (match(IDENTIFIER)) {
-    // return new Expression.Literal(previous().lexeme, true);
-    // }
-
-    // if (match(LEFT_PAREN)) {
-    // Expression expression = expression();
-    // consume(RIGHT_PAREN, "Expected ) after expression.");
-    // return new Expression.Grouping(expression);
-    // }
-
-    // throw error(peek(), "Expected operand.");
-    // }
 
     // orderbyClause = ORDER BY expression orderType (, expression orderType)*
     // orderType = ASC | DESC

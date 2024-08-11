@@ -40,9 +40,10 @@ public abstract class Clause {
     }
 
     static class CreateClause extends Clause {
-        CreateClause(Token name, List<List<String>> columnsDefinition) {
+        CreateClause(Token name, List<List<Object>> columnsDefinition, List<Object> tableConstraints) {
             this.name = name;
             this.columnsDefinition = columnsDefinition;
+            this.tableConstraints = tableConstraints;
         }
 
         @Override
@@ -52,7 +53,8 @@ public abstract class Clause {
         }
 
         final Token name;
-        final List<List<String>> columnsDefinition;
+        final List<List<Object>> columnsDefinition;
+        final List<Object> tableConstraints;
     }
 
     public static class SelectClause extends Clause {

@@ -37,6 +37,10 @@ public class Lexer {
         keywords.put("PRIMARY", PRIMARY);
         keywords.put("KEY", KEY);
         keywords.put("UNIQUE", UNIQUE);
+        keywords.put("CHECK", CHECK);
+        keywords.put("FOREIGN", FOREIGN);
+        keywords.put("REFERENCES", REFERENCES);
+        keywords.put("CONSTRAINT", CONSTRAINT);
         keywords.put("DATABASE", DATABASE);
         keywords.put("TABLE", TABLE);
 

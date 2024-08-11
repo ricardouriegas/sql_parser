@@ -11,6 +11,109 @@ import static edu.upvictoria.fpoo.SQL.TokenType.*;
 import static org.junit.Assert.*;
 
 public class LexerTest {
+
+        /**
+         * Test create with constraints
+         */
+        @Test
+        public void testScanTokens1() {
+                Lexer lexer = new Lexer(
+                        "CREATE TABLE Alumnos (, " +
+                        "id NUMBER NOT NULL PRIMARY KEY, " +
+                        "nombre STRING NOT NULL, " +
+                        "app STRING NOT NULL, " +
+                        "apm STRING NULL, " +
+                        "edad NUMBER CHECK (edad > 0)" +
+                        ");"
+                );
+                List<Token> tokens = lexer.scanTokens();
+
+                List<Token> expected = new ArrayList<>();
+                expected.add(
+                                new Token(CREATE, "CREATE", "CREATE", 1, 0, 6));
+                expected.add(
+                                new Token(TABLE, "TABLE", "TABLE", 1, 7, 12));
+                expected.add(
+                                new Token(IDENTIFIER, "ALUMNOS", "ALUMNOS", 1, 13, 20));
+                expected.add(
+                                new Token(LEFT_PAREN, "(", null, 1, 21, 22));
+                expected.add(
+                                new Token(COMMA, ",", null, 1, 22, 23));
+                expected.add(
+                                new Token(IDENTIFIER, "ID", "ID", 1, 24, 26));
+                expected.add(
+                                new Token(NUMBER_DATA_TYPE, "NUMBER", "NUMBER", 1, 27, 33));
+                expected.add(
+                                new Token(NOT, "NOT", "NOT", 1, 34, 37));
+                expected.add(
+                                new Token(NULL, null, null, 1, 38, 42));
+                expected.add(
+                                new Token(PRIMARY, "PRIMARY", "PRIMARY", 1, 43, 50));
+                expected.add(
+                                new Token(KEY, "KEY", "KEY", 1, 51, 54));
+                expected.add(
+                                new Token(COMMA, ",", null, 1, 54, 55));
+                expected.add(
+                                new Token(IDENTIFIER, "NOMBRE", "NOMBRE", 1, 56, 62));
+                expected.add(
+                                new Token(STRING_DATA_TYPE, "STRING", "STRING", 1, 63, 69));
+                expected.add(
+                                new Token(NOT, "NOT", "NOT", 1, 70, 73));
+                expected.add(
+                                new Token(NULL, null, null, 1, 74, 78));
+                expected.add(
+                                new Token(COMMA, ",", null, 1, 78, 79));
+                expected.add(
+                                new Token(IDENTIFIER, "APP", "APP", 1, 80, 83));
+                expected.add(
+                                new Token(STRING_DATA_TYPE, "STRING", "STRING", 1, 84, 90));
+                expected.add(
+                                new Token(NOT, "NOT", "NOT", 1, 91, 94));
+                expected.add(
+                                new Token(NULL, null, null, 1, 95, 99));
+                expected.add(
+                                new Token(COMMA, ",", null, 1, 99, 100));
+                expected.add(
+                                new Token(IDENTIFIER, "APM", "APM", 1, 101, 104));
+                expected.add(
+                                new Token(STRING_DATA_TYPE, "STRING", "STRING", 1, 105, 111));
+                expected.add(
+                                new Token(NULL, null, null, 1, 112, 116));
+                expected.add(
+                                new Token(COMMA, ",", null, 1, 116, 117));
+                expected.add(
+                                new Token(IDENTIFIER, "EDAD", "EDAD", 1, 118, 122));
+                expected.add(
+                                new Token(NUMBER_DATA_TYPE, "NUMBER", "NUMBER", 1, 123, 126));
+                expected.add(
+                                new Token(CHECK, "CHECK", "CHECK", 1, 127, 132));
+                expected.add(
+                                new Token(LEFT_PAREN, "(", null, 1, 133, 134));
+                expected.add(
+                                new Token(IDENTIFIER, "EDAD", "EDAD", 1, 134, 138));
+                expected.add(
+                                new Token(GREATER, ">", null, 1, 139, 140));
+                expected.add(
+                                new Token(NUMBER, "0", 0.0, 1, 141, 142));
+                expected.add(
+                                new Token(RIGHT_PAREN, ")", null, 1, 142, 143));
+                expected.add(
+                                new Token(RIGHT_PAREN, ")", null, 1, 143, 144));
+                expected.add(
+                                new Token(SEMICOLON, ";", null, 1, 144, 145));
+                expected.add(
+                                new Token(EOF, "", null, 1, 145, 145));
+
+                // Assertion
+                for (int i = 0; i < expected.size(); i++) {
+                        assertEquals(expected.get(i).type, tokens.get(i).type);
+                        assertEquals(expected.get(i).lexeme, tokens.get(i).lexeme);
+                        assertEquals(expected.get(i).literal, tokens.get(i).literal);
+                        assertEquals(expected.get(i).line, tokens.get(i).line);
+                }
+
+        }
+
         /**
          * Test basic SELECT with \n
          */
@@ -20,7 +123,8 @@ public class LexerTest {
                 List<Token> tokens = lexer.scanTokens();
                 // System.out.println(tokens);
                 // Expected:
-                // SELECT SELECT null, STAR * null, FROM FROM null, TABLE TABLE null, SEMICOLON ; null, EOF
+                // SELECT SELECT null, STAR * null, FROM FROM null, TABLE TABLE null, SEMICOLON
+                // ; null, EOF
                 // null
                 List<Token> expected = new ArrayList<>();
                 expected.add(

@@ -4,11 +4,17 @@ public class Pair <X, Y> {
     private X x;
     private Y y;
 
+    // constructor
     public Pair(X x, Y y) {
         this.x = x;
         this.y = y;
     }
 
+    // empty constructor
+    public Pair() {
+    }
+
+    // getters and setters
     public X getX() {
         return x;
     }

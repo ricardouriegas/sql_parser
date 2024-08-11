@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE table SYSTEM "exampleDTD.dtd">
+
+<table>
+    <name>USERS</name>
+    <columns>
+        <column>
+            <name>ID</name>
+            <type>NUMBER</type>
+            <primary_key>TRUE</primary_key>
+            <constraints>
+                <constraint>NOT NULL</constraint>
+            </constraints>
+        </column>
+        <column>
+            <name>USERNAME</name>
+            <type>STRING</type>
+            <constraints>
+                <constraint>UNIQUE</constraint>
+                <constraint>NOT NULL</constraint>
+                <!-- here cannot be a foreign key -->
+            </constraints>
+        </column>
+        <column>
+            <name>EMAIL</name>
+            <type>STRING</type>
+            <constraints>
+                <constraint>UNIQUE</constraint>
+                <constraint>NOT NULL</constraint>
+            </constraints>
+        </column>
+    </columns>
+    <constraints>
+        <constraint>FOREIGN KEY (ID) REFERENCES USERS(ID)</constraint>
+        <!-- here cannot be a NOT NULL constraint -->
+    </constraints>
+</table>

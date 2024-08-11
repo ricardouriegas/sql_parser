@@ -1,0 +1,8 @@
+<!ELEMENT table (name, columns, constraints) >
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT columns (column+)>
+<!ELEMENT column (name, type, primary_key?, constraints)>
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT primary_key (#PCDATA)>
+<!ELEMENT constraints (constraint+)>
+<!ELEMENT constraint (#PCDATA)>

@@ -6,23 +6,28 @@ import java.util.regex.Pattern;
 import java.nio.file.Path;
 
 /**
- * TODO: implement constraint validation and that 
+ * TODO: implement constraint validation and that
  * TODO: make table great again
  * (is not necessary at the moment)
  */
 public class Table {
-    // List[1] <Key, Value> the key is the column name and the value is the value of the row
+    // List[1] <Key, Value> the key is the column name and the value is the value of
+    // the row
     // example:
-    // table = [ 
-        // {name: "Juan", age: 20},
-        // {name: "Pedro", age: 30}, 
-        // {name: "Maria", age: 25}
+    // table = [
+    // {name: "Juan", age: 20},
+    // {name: "Pedro", age: 30},
+    // {name: "Maria", age: 25}
     // ]
-    private List<HashMap<String, Object>> table; 
+    private List<HashMap<String, Object>> table;
     private List<String> columnNames;
     private HashMap<String, String> columnTypes;
-    private List<String> constraints;
-    
+
+    // TODO: implement constraints on the writeCSV, writeToMeta and save/load
+    // methods
+    private List<String> tableConstraints;
+    private List<String> columnConstraints;
+
     // compile regex pattern
     private static final Pattern number_pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
 
@@ -31,7 +36,8 @@ public class Table {
         table = new ArrayList<HashMap<String, Object>>();
         columnNames = new ArrayList<>();
         columnTypes = new HashMap<>();
-        // constraints = new ArrayList<>();
+        tableConstraints = new ArrayList<>();
+        columnConstraints = new ArrayList<>();
     }
 
     // Method to load data from a CSV file into a Table object
@@ -86,7 +92,7 @@ public class Table {
 
     // Method to write data to a CSV file
     public void writeToCSV(Path file) {
-        // verify theres not amissing row with 
+        // verify theres not amissing row with
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file.toFile()))) {
 
@@ -116,20 +122,34 @@ public class Table {
         }
     }
 
-    // Method to write metadata to a .meta file
-    // public void writeToMeta(Path file) {
-    //     try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-    //         for (String columnName : columnNames) {
-    //             String dataType = columnTypes.get(columnName);
-    //             writer.write(columnName + " " + dataType + " " + constraints);
-    //             writer.newLine();
-    //         }
-    //     } catch (SecurityException e) {
-    //         throw new RuntimeException("The program does not have permission to write the database .meta file", e);
-    //     } catch (IOException e) {
-    //         throw new RuntimeException("Error writing .meta file", e);
-    //     }
-    // }
+    // Method to write metadata to a TABLE.xml file
+    // TODO: verify
+    public void writeToMeta(Path file) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file.toFile()))) {
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            writer.write("<!DOCTYPE database SYSTEM \".DATABASE.dtd\">\n\n");
+
+            writer.write("<table>\n");
+
+            writer.write("\t<name>" + file.getFileName().toString() + "</name>\n");
+
+            writer.write("\t<columns>\n");
+            // Write the column names and data types
+            for (String columnName : columnNames) {
+                writer.write("\t<column>\n");
+                writer.write("\t\t<name>" + columnName + "</name>\n");
+                writer.write("\t\t<type>" + columnTypes.get(columnName) + "</type>\n");
+                writer.write("\t</column>\n");
+            }
+            writer.write("\t</columns>\n");
+
+            writer.write("</table>");
+        } catch (SecurityException e) {
+            throw new RuntimeException("The program does not have permission to write the database .meta file", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing .meta file", e);
+        }
+    }
 
     // Method to save data to a CSV file and its metadata to a .meta file
     public void save(Path csvFile) {
@@ -142,19 +162,51 @@ public class Table {
         }
     }
 
+    // Method to add column constraints to the table
+    public void addColumnConstraint(Object... constraint) {
+        /*
+         * if (check(PRIMARY)) //? String -> <column_name>
+         * return primaryKey();
+         * 
+         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name, column_name>
+         * return foreignKey();
+         * 
+         * if (check(UNIQUE)) //? String -> <column_name>
+         * return uniqueKey();
+         * 
+         * if (check(NOT)) //? String -> <column_name>
+         * return notNull();
+         * 
+         * if (check(CHECK)) //? Pair<Token, Expression> -> <column_name, expression>
+         * return check();
+         */
+        for (Object c : constraint) {
+            tableConstraints.add(c.toString());
+        }
+    }
+
+    // Method to add table constraints to the table
+    public void addTableConstraint(Object... constraint) {
+        /*
+         * if (check(PRIMARY)) //? String -> <column_name>
+         * return primaryKey();
+         * 
+         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name, column_name>
+         * return foreignKey();
+         * 
+         * if (check(UNIQUE)) //? String -> <column_name>
+         * return uniqueKey();
+         * 
+         * if (check(CHECK)) //? Pair<Token, Expression> -> <column_name, expression>
+         * return check();
+         */
+        for (Object c : constraint) {
+            columnConstraints.add(c.toString());
+        }
+    }
+
     // Method to add a row to the table
     public void addRow(HashMap<String, Object> row) {
-        // save strings in quotes
-        // for (String columnName : columnNames) {
-        // Object value = row.get(columnName);
-        // if (value instanceof String) {
-        // String stringValue = (String) value;
-        // if (!stringValue.startsWith("\"") && !stringValue.endsWith("\"")) {
-        // row.put(columnName, "\"" + stringValue + "\"");
-        // }
-        // }
-        // }
-
         // add the row to the table
         table.add(row);
     }
@@ -176,7 +228,7 @@ public class Table {
         }
     }
 
-    public void deleteRow (int index) {
+    public void deleteRow(int index) {
         if (index < 0 || index >= table.size()) {
             System.out.println("Index out of bounds: " + index);
             return;
@@ -184,7 +236,7 @@ public class Table {
         table.remove(index);
     }
 
-    public void deleteRows (List<Integer> indexes) {
+    public void deleteRows(List<Integer> indexes) {
         for (int i = indexes.size() - 1; i >= 0; i--) {
             int index = indexes.get(i);
             if (index < 0 || index >= table.size()) {
@@ -371,11 +423,6 @@ public class Table {
 
     // Method sort using java's vanilla function
     public void sort(String columnName) {
-        // Check if the column name exists
-        // if (!columnNames.contains(columnName)) {
-        // throw new IllegalArgumentException("Column '" + columnName + "' does not
-        // exist.");
-        // }
 
         // Define a custom comparator to compare rows based on the specified column
         Comparator<HashMap<String, Object>> comparator = (row1, row2) -> {
@@ -405,13 +452,6 @@ public class Table {
 
     // Method to sort in reverse order
     public void sortReverse(String columnName) {
-        // Check if the column name exists
-        // if (!columnNames.contains(columnName)) {
-        // // throw new IllegalArgumentException("Column '" + columnName + "' does not
-        // exist.");
-        // return;
-        // }
-
         // Define a custom comparator to compare rows based on the specified column
         Comparator<HashMap<String, Object>> comparator = (row1, row2) -> {
             Object value1 = row1.get(columnName);
@@ -477,5 +517,5 @@ public class Table {
         }
         return sb.toString();
     }
-    
+
 }

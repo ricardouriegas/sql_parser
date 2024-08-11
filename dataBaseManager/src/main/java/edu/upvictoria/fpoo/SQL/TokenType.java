@@ -14,7 +14,7 @@ public enum TokenType {
     // Keywords
     WHERE, FROM, ORDER, BY, LIMIT, VALUES, INTO, AND, OR, NOT, NULL,
     TRUE, FALSE, PRIMARY, KEY, DATABASE, TABLE, ASC, DESC, SET, UNIQUE,
-    AS, GROUP, IS, PIPE_PIPE,
+    AS, GROUP, IS, PIPE_PIPE, CHECK, FOREIGN, REFERENCES, CONSTRAINT,
 
     // LITERALS (a literal is a representative of a fixed value)
     // AN IDENTIFIER IS ONLY A secuenve of characters THAT REPRESENTS A NAME OF A TABLE, COLUMN, ETC.
