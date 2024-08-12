@@ -1,8 +1,12 @@
 <!ELEMENT table (name, columns, constraints) >
 <!ELEMENT name (#PCDATA)>
 <!ELEMENT columns (column+)>
-<!ELEMENT column (name, type, primary_key?, constraints)>
+<!ELEMENT column (name, type, primary_key?, default?, check?, constraints?)>
+<!ELEMENT default (#PCDATA)>
+<!ELEMENT check (#PCDATA)>
 <!ELEMENT type (#PCDATA)>
 <!ELEMENT primary_key (#PCDATA)>
 <!ELEMENT constraints (constraint+)>
 <!ELEMENT constraint (#PCDATA)>
+
+<!ATTLIST check condition CDATA #REQUIRED>

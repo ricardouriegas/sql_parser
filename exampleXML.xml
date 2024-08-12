@@ -15,15 +15,17 @@
         <column>
             <name>USERNAME</name>
             <type>STRING</type>
+            <check condition="LENGTH(USERNAME) > 3"></check>
             <constraints>
                 <constraint>UNIQUE</constraint>
                 <constraint>NOT NULL</constraint>
-                <!-- here cannot be a foreign key -->
+                <!-- here cannot be a foreing key, primary key or default constraint -->
             </constraints>
         </column>
         <column>
             <name>EMAIL</name>
             <type>STRING</type>
+            <default>NULL</default>
             <constraints>
                 <constraint>UNIQUE</constraint>
                 <constraint>NOT NULL</constraint>
@@ -32,6 +34,6 @@
     </columns>
     <constraints>
         <constraint>FOREIGN KEY (ID) REFERENCES USERS(ID)</constraint>
-        <!-- here cannot be a NOT NULL constraint -->
+        <!-- here cannot be a NOT NULL or DEFAULT constraint -->
     </constraints>
 </table>

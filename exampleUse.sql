@@ -8,6 +8,16 @@ CREATE TABLE example ( -- should return an error if example already exists
     age NUMBER
 );
 
+-- example using the check constraint
+CREATE TABLE Persons (
+    ID number NOT NULL,
+    LastName string NOT NULL,
+    FirstName string,
+    Age number,
+    City string,
+    CONSTRAINT CHK_Person CHECK (Age>=18 AND City='Sandnes')
+);
+
 INSERT INTO example (id, name, age) VALUES (1, 'Richy', 20);
 INSERT INTO example (id, name, age) VALUES (3, 'John', 30);
 INSERT INTO example (id, name, age) VALUES (4, 'Doe', 40);

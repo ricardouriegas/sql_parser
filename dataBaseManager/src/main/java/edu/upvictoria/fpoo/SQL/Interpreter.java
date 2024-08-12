@@ -177,7 +177,10 @@ public class Interpreter
         // constraints are optional
         // columnDefinition = [[name, type, constraint], [name, type, constraint], ...]
         for (List<Object> column : clause.columnsDefinition) {
-            table.addColumn(column.get(0).toString(), column.get(1));
+            // add the column name and the data type
+            table.addColumn(column.get(0).toString(), column.get(1)); 
+            
+            // add the constraints
             while (column.size() > 2) {
                 table.addColumnConstraint(column.get(0), column.get(2));
                 column.remove(2);

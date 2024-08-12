@@ -41,6 +41,7 @@ public class Lexer {
         keywords.put("FOREIGN", FOREIGN);
         keywords.put("REFERENCES", REFERENCES);
         keywords.put("CONSTRAINT", CONSTRAINT);
+        keywords.put("DEFAULT", DEFAULT);
         keywords.put("DATABASE", DATABASE);
         keywords.put("TABLE", TABLE);
 

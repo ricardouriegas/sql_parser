@@ -131,7 +131,7 @@ public class Parser {
             return "PRIMARY KEY" + column_name.lexeme;
         }
 
-        if (check(FOREIGN)) { //? List<Token> -> <column_name, table_name, column_name>
+        if (check(FOREIGN)) { //? List<Token> -> <column_name, table_name, column_name_referenced>
             consume(FOREIGN, "Expected keyword FOREIGN after FOREIGN KEY.");
             consume(KEY, "Expected keyword KEY after FOREIGN.");
 
@@ -210,31 +210,16 @@ public class Parser {
     }
 
     // columnConstraint = PRIMARY KEY
-    // | FOREIGN KEY REFERENCES tableName
     // | UNIQUE
     // | NOT NULL 
-    // | CHECK '(' expression ')'
+    // | REFERENCES tableName `(` columnName `)`
+    // | DEFAULT <value>
+    // | CHECK '(' <expression> ')'
     private Object columnConstraint() {
         if (check(PRIMARY)) { //? String -> <column_name>
             consume(PRIMARY, "Expected keyword PRIMARY after PRIMARY KEY.");
             consume(KEY, "Expected keyword KEY after PRIMARY.");
             return "PRIMARY KEY";
-        }
-
-        if (check(FOREIGN)){ //? List<Token> -> <column_name, table_name, column_name>
-            consume(FOREIGN, "Expected keyword FOREIGN after FOREIGN KEY.");
-            consume(KEY, "Expected keyword KEY after FOREIGN.");
-
-            consume(REFERENCES, "Expected keyword REFERENCES after FOREIGN KEY.");
-
-            List<Token> fList = new ArrayList<>();
-            fList.add(consume(IDENTIFIER, "Expected table name after REFERENCES."));
-
-            consume(LEFT_PAREN, "Expected ( after table name.");
-            fList.add(consume(IDENTIFIER, "Expected column name after (."));
-            consume(RIGHT_PAREN, "Expected ) after column name.");
-
-            return fList;
         }
 
         if (check(UNIQUE)) { //? String -> <column_name>
@@ -246,6 +231,28 @@ public class Parser {
             consume(NOT, "Expected keyword NOT after NOT NULL.");
             consume(NULL, "Expected keyword NULL after NOT.");
             return "NOT NULL";
+        }
+
+        if (check(REFERENCES)) { //? List<Token> -> <column_name, table_name, column_name_referenced>
+            consume(REFERENCES, "Expected keyword REFERENCES after REFERENCES.");
+
+            consume(LEFT_PAREN, "Expected ( after REFERENCES.");
+            List<Token> fList = new ArrayList<>();
+            fList.add(consume(IDENTIFIER, "Expected column name after (."));
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            fList.add(consume(IDENTIFIER, "Expected table name after REFERENCES."));
+
+            consume(LEFT_PAREN, "Expected ( after table name.");
+            fList.add(consume(IDENTIFIER, "Expected column name after (."));
+            consume(RIGHT_PAREN, "Expected ) after column name.");
+
+            return fList;
+        }
+
+        if (check(DEFAULT)) { //? Token -> <value>
+            consume(DEFAULT, "Expected keyword DEFAULT after DEFAULT.");
+            return value();
         }
 
         if (check(CHECK)) {//? Pair<Token, Expression> -> <column_name, expression>
@@ -262,51 +269,6 @@ public class Parser {
         }
 
         return null;
-    }
-
-    // primaryKey = PRIMARY KEY
-    private String primaryKeyColumn() {
-        consume(PRIMARY, "Expected keyword PRIMARY after PRIMARY KEY.");
-        consume(KEY, "Expected keyword KEY after PRIMARY.");
-        return "PRIMARY KEY";
-    }
-
-    // foreignKey = FOREIGN KEY REFERENCES tableName
-    private Object foreignKeyColumn() {
-        consume(FOREIGN, "Expected keyword FOREIGN after FOREIGN KEY.");
-        consume(KEY, "Expected keyword KEY after FOREIGN.");
-        consume(REFERENCES, "Expected keyword REFERENCES after FOREIGN KEY.");
-        return consume(IDENTIFIER, "Expected table name after REFERENCES.");
-    }
-
-    // uniqueKey = UNIQUE
-    private String uniqueKeyColumn() {
-        consume(UNIQUE, "Expected keyword UNIQUE after UNIQUE.");
-        return "UNIQUE";
-    }
-    
-    // notNull = NOT NULL '(' columnName ')'
-    private String notNullColumn() {
-        String column_name = previous().lexeme;
-
-        consume(NOT, "Expected keyword NOT after NOT NULL.");
-        consume(NULL, "Expected keyword NULL after NOT.");
-
-        return "NOT NULL" + column_name;
-    }
-
-    // check = CHECK '(' columnName (expression) ')'
-    private Object checkColumn() {
-        consume(CHECK, "Expected keyword CHECK after CHECK.");
-        consume(LEFT_PAREN, "Expected ( after CHECK.");
-
-        Pair<Token, Expression> check = new Pair<>(); //? <column_name, expression>
-        check.setX(consume(IDENTIFIER, "Expected column name after (."));
-        check.setY(expression());
-
-        consume(RIGHT_PAREN, "Expected ) after column name.");
-        
-        return check;
     }
 
 

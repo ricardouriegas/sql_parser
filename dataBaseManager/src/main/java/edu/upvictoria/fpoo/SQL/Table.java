@@ -25,8 +25,8 @@ public class Table {
 
     // TODO: implement constraints on the writeCSV, writeToMeta and save/load
     // methods
-    private List<String> tableConstraints;
-    private List<String> columnConstraints;
+    private List<Object> tableConstraints;
+    private List<Object> columnConstraints;
 
     // compile regex pattern
     private static final Pattern number_pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
@@ -139,6 +139,10 @@ public class Table {
                 writer.write("\t<column>\n");
                 writer.write("\t\t<name>" + columnName + "</name>\n");
                 writer.write("\t\t<type>" + columnTypes.get(columnName) + "</type>\n");
+                //! check if there is a check constraint
+
+                //! check if there is a default constraint
+
                 writer.write("\t</column>\n");
             }
             writer.write("\t</columns>\n");
@@ -166,22 +170,19 @@ public class Table {
     public void addColumnConstraint(Object... constraint) {
         /*
          * if (check(PRIMARY)) //? String -> <column_name>
-         * return primaryKey();
-         * 
-         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name, column_name>
-         * return foreignKey();
          * 
          * if (check(UNIQUE)) //? String -> <column_name>
-         * return uniqueKey();
          * 
          * if (check(NOT)) //? String -> <column_name>
-         * return notNull();
+         * 
+         * if (check(REFERENCES)) //? List<Token> -> <column_name, table_name, column_name_referenced>
+         * 
+         * if (check(DEFAULT)) //? Token -> <value>
          * 
          * if (check(CHECK)) //? Pair<Token, Expression> -> <column_name, expression>
-         * return check();
          */
         for (Object c : constraint) {
-            tableConstraints.add(c.toString());
+            tableConstraints.add(c);
         }
     }
 
@@ -189,19 +190,15 @@ public class Table {
     public void addTableConstraint(Object... constraint) {
         /*
          * if (check(PRIMARY)) //? String -> <column_name>
-         * return primaryKey();
          * 
-         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name, column_name>
-         * return foreignKey();
+         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name, column_name_referenced>
          * 
          * if (check(UNIQUE)) //? String -> <column_name>
-         * return uniqueKey();
          * 
          * if (check(CHECK)) //? Pair<Token, Expression> -> <column_name, expression>
-         * return check();
          */
         for (Object c : constraint) {
-            columnConstraints.add(c.toString());
+            columnConstraints.add(c);
         }
     }
 
@@ -392,33 +389,6 @@ public class Table {
             return;
         }
         table = table.subList(0, limit);
-    }
-
-    // Method to filter columns (select)
-    public void filterColumns(List<String> columns) {
-        List<String> columnsToKeep = new ArrayList<>();
-
-        // get the columns to keep
-        for (String column : columns) {
-            if (columnNames.contains(column)) {
-                columnsToKeep.add(column);
-            }
-        }
-
-        // remove everything that is not in the columns to keep
-        for (HashMap<String, Object> row : table) {
-            for (String column : columnNames) {
-                if (columnsToKeep.contains(column)) {
-                    table.remove(row);
-                }
-            }
-        }
-
-        // update the columns
-        columnNames = columns;
-        table.forEach(row -> {
-            row.keySet().retainAll(columns);
-        });
     }
 
     // Method sort using java's vanilla function

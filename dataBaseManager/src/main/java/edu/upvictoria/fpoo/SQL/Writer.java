@@ -24,16 +24,33 @@ public class Writer {
         try {
             BufferedWriter writer = new BufferedWriter(
                     new FileWriter(path.toString() + "/.DATABASE.dtd"));
-            
+            /**
+             * <!ELEMENT table (name, columns, constraints) >
+             * <!ELEMENT name (#PCDATA)>
+             * <!ELEMENT columns (column+)>
+             * <!ELEMENT column (name, type, primary_key?, default?, check?, constraints?)>
+             * <!ELEMENT default (#PCDATA)>
+             * <!ELEMENT check (#PCDATA)>
+             * <!ELEMENT type (#PCDATA)>
+             * <!ELEMENT primary_key (#PCDATA)>
+             * <!ELEMENT constraints (constraint+)>
+             * <!ELEMENT constraint (#PCDATA)>
+             * 
+             * <!ATTLIST check condition CDATA #REQUIRED>
+             */
             writer.write("<!ELEMENT table (name, columns, constraints) >\n");
             writer.write("<!ELEMENT name (#PCDATA)>\n");
             writer.write("<!ELEMENT columns (column+)>\n");
-            writer.write("<!ELEMENT column (name, type, primary_key?, constraints)>\n");
+            writer.write("<!ELEMENT column (name, type, primary_key?, default?, check?, constraints?)>\n");
+            writer.write("<!ELEMENT default (#PCDATA)>\n");
+            writer.write("<!ELEMENT check (#PCDATA)>\n");
             writer.write("<!ELEMENT type (#PCDATA)>\n");
             writer.write("<!ELEMENT primary_key (#PCDATA)>\n");
             writer.write("<!ELEMENT constraints (constraint+)>\n");
             writer.write("<!ELEMENT constraint (#PCDATA)>\n");
-            
+
+            writer.write("<!ATTLIST check condition CDATA #REQUIRED>\n");
+
             writer.close();
         } catch (Exception e) {
             // e.printStackTrace();
