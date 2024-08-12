@@ -15,7 +15,7 @@
         <column>
             <name>USERNAME</name>
             <type>STRING</type>
-            <check condition="LENGTH(USERNAME) > 3"></check>
+            <check condition="LENGTH(USERNAME) > 3"/>
             <constraints>
                 <constraint>UNIQUE</constraint>
                 <constraint>NOT NULL</constraint>
