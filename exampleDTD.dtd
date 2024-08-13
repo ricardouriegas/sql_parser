@@ -1,12 +1,17 @@
-<!ELEMENT table (name, columns, constraints) >
+<!ELEMENT table (name, columns, primary_key?, foreign_key*, unique*, check*)>
 <!ELEMENT name (#PCDATA)>
+<!ELEMENT foreign_key (#PCDATA)>
 <!ELEMENT columns (column+)>
-<!ELEMENT column (name, type, primary_key?, default?, check?, constraints?)>
-<!ELEMENT default (#PCDATA)>
-<!ELEMENT check (#PCDATA)>
+<!ELEMENT column (name, type, primary_key?, unique?, not_null?, default?, check?)>
 <!ELEMENT type (#PCDATA)>
 <!ELEMENT primary_key (#PCDATA)>
-<!ELEMENT constraints (constraint+)>
-<!ELEMENT constraint (#PCDATA)>
+<!ELEMENT unique (#PCDATA)>
+<!ELEMENT not_null (#PCDATA)>
+<!ELEMENT default (#PCDATA)>
+<!ELEMENT check (#PCDATA)>
 
+<!ATTLIST check column_name CDATA #REQUIRED>
 <!ATTLIST check condition CDATA #REQUIRED>
+<!ATTLIST foreign_key column_name CDATA #REQUIRED>
+<!ATTLIST foreign_key referenced_table CDATA #REQUIRED>
+<!ATTLIST foreign_key referenced_column CDATA #REQUIRED>

@@ -180,10 +180,12 @@ public class Interpreter
             // add the column name and the data type
             table.addColumn(column.get(0).toString(), column.get(1)); 
             
-            // add the constraints
-            while (column.size() > 2) {
-                table.addColumnConstraint(column.get(0), column.get(2));
-                column.remove(2);
+            if (column.size() == 2) 
+                continue;
+
+            // add the constraints of the column
+            for (int i = 2; i < column.size(); i++) {
+                table.addColumnConstraint(column.get(0).toString(), column.get(i));
             }
         }
 
@@ -194,6 +196,7 @@ public class Interpreter
 
         // save the table
         table.save(file);
+        table.writeToMeta(file);
 
         result = "Table " + clause.name.lexeme + " created";
 

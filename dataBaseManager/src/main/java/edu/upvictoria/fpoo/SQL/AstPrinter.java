@@ -22,7 +22,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
     @Override
     public String visitLiteralExpression(Expression.Literal expr) {
         if (expr.value == null)
-            return "nil";
+            return "null";
         return expr.value.toString();
     }
 
@@ -97,10 +97,11 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
                     // Pair<List<Pair<Expression, Token>>, Boolean> columns
                     List<Pair<Expression, Token>> pair = clause.columns.getX();
                     for (int j = 0; j < pair.size(); j++) {
-                        if (pair.get(j).getY() == null) 
+                        if (pair.get(j).getY() == null)
                             builder.append(pair.get(j).getX().accept(this));
                         else
-                            builder.append(pair.get(j).getX().accept(this)).append(" AS ").append(pair.get(j).getY().lexeme);
+                            builder.append(pair.get(j).getX().accept(this)).append(" AS ")
+                                    .append(pair.get(j).getY().lexeme);
                         if (j != pair.size() - 1) {
                             builder.append(", ");
                         }
@@ -138,7 +139,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         // Implementation for InsertClause printing
         StringBuilder builder = new StringBuilder();
         builder.append("INSERT INTO ").append(clause.token.lexeme).append(" ");
-        
+
         builder.append("VALUES (");
         for (int i = 0; i < clause.valuesMap.size(); i++) {
             // HashMap<String, Expression> valuesMap
@@ -153,7 +154,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         return builder.toString();
     }
 
-    @Override 
+    @Override
     public String createClause(Clause.CreateClause clause) {
         StringBuilder builder = new StringBuilder();
         builder.append("CREATE TABLE ").append(clause.name.lexeme).append(" ");
@@ -172,7 +173,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         return builder.toString();
     }
 
-    @Override 
+    @Override
     public String queryClause(Clause.QueryClause clause) {
         StringBuilder builder = new StringBuilder();
         builder.append("QUERY ").append(clause.query);
@@ -194,7 +195,7 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
         } else {
             throw new IllegalArgumentException("Unsupported value type: " + value.getClass().getSimpleName());
         }
-    }    
+    }
 
     @Override
     public String visitFunctionCallExpression(Expression.FunctionCall expr) {
@@ -217,7 +218,6 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
 
         return expr.lexeme;
     }
-    
 
     private String printExpression(Expression expr) {
         return expr.accept(this);
@@ -226,10 +226,13 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
     private String parenthesize(String name, Expression... exprs) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("(").append(name);
-        for (Expression expr : exprs) {
-            builder.append(" ");
-            builder.append(expr.accept(this));
+        // Cambiar el orden de construcción del string
+        builder.append("(");
+        for (int i = 0; i < exprs.length; i++) {
+            builder.append(exprs[i].accept(this));
+            if (i != exprs.length - 1) {
+                builder.append(" ").append(name).append(" ");
+            }
         }
         builder.append(")");
 

@@ -9,7 +9,7 @@ Here you can find the project that generates the `XML-DTD_Parser.jar` file: [XML
 To do so, you should run the following command:
 
 ```bash
-mvn install:install-file -Dfile=XMLDBParser-1.0-SNAPSHOT.jar -DgroupId=edu.upvictoria.fpoo -DartifactId=XMLDBParser -Dversion=1.0-SNAPSHOT -Dpackaging=jar
+mvn install:install-file -Dfile=XMLDBParser-1.0-SNAPSHOT.jar -DgroupId=com.tu.grupo -DartifactId=XMLDBParser -Dversion=1.0-SNAPSHOT -Dpackaging=jar
 ```
 
 ## Práctica 5 - Librería Java para definir reglas de base de datos a partir de DTD

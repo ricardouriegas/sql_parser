@@ -7,33 +7,25 @@
         <column>
             <name>ID</name>
             <type>NUMBER</type>
-            <primary_key>TRUE</primary_key>
-            <constraints>
-                <constraint>NOT NULL</constraint>
-            </constraints>
+            <primary_key></primary_key>
+            <unique>TRUE</unique>
+            <not_null>TRUE</not_null>
+            <default>NULL</default>
+            <check column_name="ID" condition="ID > 0"/>
         </column>
         <column>
             <name>USERNAME</name>
             <type>STRING</type>
-            <check condition="LENGTH(USERNAME) > 3"/>
-            <constraints>
-                <constraint>UNIQUE</constraint>
-                <constraint>NOT NULL</constraint>
-                <!-- here cannot be a foreing key, primary key or default constraint -->
-            </constraints>
+            <check column_name="USERNAME" condition="LENGTH(USERNAME) > 0"/>
         </column>
         <column>
             <name>EMAIL</name>
             <type>STRING</type>
             <default>NULL</default>
-            <constraints>
-                <constraint>UNIQUE</constraint>
-                <constraint>NOT NULL</constraint>
-            </constraints>
         </column>
     </columns>
-    <constraints>
-        <constraint>FOREIGN KEY (ID) REFERENCES USERS(ID)</constraint>
-        <!-- here cannot be a NOT NULL or DEFAULT constraint -->
-    </constraints>
+    <primary_key>USERNAME</primary_key>
+    <foreign_key column_name="EMAIL" referenced_table="USERNAME" referenced_column="USERNAME"/>
+    <unique>EMAIL</unique>
+    <check column_name="ID" condition="ID > 0"/>
 </table>

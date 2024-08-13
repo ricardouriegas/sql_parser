@@ -78,7 +78,8 @@ public class App {
             } catch (Error e) {
                 System.err.println(e.getMessage());
             } catch (Exception e) {
-                System.err.println("Something goes wrong.");
+                // System.err.println("Something goes wrong.");
+                e.printStackTrace();
             }
         }
     }

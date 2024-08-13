@@ -99,7 +99,10 @@ public class Parser {
         List<Object> tableConstraints = new ArrayList<>();
 
         while (!check(RIGHT_PAREN)) {
-            if (match(PRIMARY, FOREIGN, UNIQUE, CHECK)) {
+            if (match(CONSTRAINT)) {
+                // first will be the table name
+                tableConstraints.add(consume(IDENTIFIER, "Expected constraint name after CONSTRAINT."));
+                // then the constraint
                 tableConstraints.add(tableConstraint());
                 continue;
             } else {
@@ -166,6 +169,7 @@ public class Parser {
 
             Pair<Token, Expression> check = new Pair<>(); //? <column_name, expression>
             check.setX(consume(IDENTIFIER, "Expected column name after (."));
+            current--; // get back to the column name bc of the expression
             check.setY(expression());
 
             consume(RIGHT_PAREN, "Expected ) after column name.");
@@ -199,10 +203,10 @@ public class Parser {
     private String dataType() {
         if (match(NUMBER_DATA_TYPE))
             return "NUMBER";
-            if (match(STRING_DATA_TYPE))
+        if (match(STRING_DATA_TYPE))
             return "STRING";
         if (match(DATE_DATA_TYPE))
-        return "DATE";
+            return "DATE";
         if (match(BOOLEAN_DATA_TYPE))
             return "BOOLEAN";
 
@@ -212,7 +216,6 @@ public class Parser {
     // columnConstraint = PRIMARY KEY
     // | UNIQUE
     // | NOT NULL 
-    // | REFERENCES tableName `(` columnName `)`
     // | DEFAULT <value>
     // | CHECK '(' <expression> ')'
     private Object columnConstraint() {
@@ -233,23 +236,6 @@ public class Parser {
             return "NOT NULL";
         }
 
-        if (check(REFERENCES)) { //? List<Token> -> <column_name, table_name, column_name_referenced>
-            consume(REFERENCES, "Expected keyword REFERENCES after REFERENCES.");
-
-            consume(LEFT_PAREN, "Expected ( after REFERENCES.");
-            List<Token> fList = new ArrayList<>();
-            fList.add(consume(IDENTIFIER, "Expected column name after (."));
-            consume(RIGHT_PAREN, "Expected ) after column name.");
-
-            fList.add(consume(IDENTIFIER, "Expected table name after REFERENCES."));
-
-            consume(LEFT_PAREN, "Expected ( after table name.");
-            fList.add(consume(IDENTIFIER, "Expected column name after (."));
-            consume(RIGHT_PAREN, "Expected ) after column name.");
-
-            return fList;
-        }
-
         if (check(DEFAULT)) { //? Token -> <value>
             consume(DEFAULT, "Expected keyword DEFAULT after DEFAULT.");
             return value();
@@ -261,6 +247,7 @@ public class Parser {
 
             Pair<Token, Expression> check = new Pair<>(); //? <column_name, expression>
             check.setX(consume(IDENTIFIER, "Expected column name after (."));
+            current--; // get back to the column name bc of the expression
             check.setY(expression());
 
             consume(RIGHT_PAREN, "Expected ) after column name.");

@@ -10,7 +10,23 @@ import edu.upvictoria.fpoo.SQL.Token;
 import static edu.upvictoria.fpoo.SQL.TokenType.*;
 import static org.junit.Assert.*;
 
+import com.xml_parser.XMLParser.*;
+
 public class LexerTest {
+
+        /**
+         * Test the library XMLDBParser
+         */
+        @Test
+        public void testXMLDBParser() {
+                try {
+                        XMLParser parser = new XMLParser();
+                        XMLTree tree = parser.parse("/home/richy/Desktop/exampleXML.xml");
+                        tree.printTree();
+                } catch (Exception e) {
+                        e.printStackTrace();
+                }
+        }
 
         /**
          * Test create with constraints
@@ -18,14 +34,13 @@ public class LexerTest {
         @Test
         public void testScanTokens1() {
                 Lexer lexer = new Lexer(
-                        "CREATE TABLE Alumnos (, " +
-                        "id NUMBER NOT NULL PRIMARY KEY, " +
-                        "nombre STRING NOT NULL, " +
-                        "app STRING NOT NULL, " +
-                        "apm STRING NULL, " +
-                        "edad NUMBER CHECK (edad > 0)" +
-                        ");"
-                );
+                                "CREATE TABLE Alumnos (, " +
+                                                "id NUMBER NOT NULL PRIMARY KEY, " +
+                                                "nombre STRING NOT NULL, " +
+                                                "app STRING NOT NULL, " +
+                                                "apm STRING NULL, " +
+                                                "edad NUMBER CHECK (edad > 0)" +
+                                                ");");
                 List<Token> tokens = lexer.scanTokens();
 
                 List<Token> expected = new ArrayList<>();
