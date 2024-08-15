@@ -1,15 +1,14 @@
 package edu.upvictoria.fpoo.SQL;
 
+import static edu.upvictoria.fpoo.SQL.TokenType.IDENTIFIER;
+
 import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.nio.file.Path;
 
-/**
- * TODO: implement constraint validation and that
- * TODO: make table great again
- * (is not necessary at the moment)
- */
+import com.xml_parser.XMLParser.*;
+
 public class Table {
     // List[1] <Key, Value> the key is the column name and the value is the value of
     // the row
@@ -23,21 +22,14 @@ public class Table {
     private List<String> columnNames;
     private HashMap<String, String> columnTypes;
 
-    // TODO: implement constraints on the writeCSV, writeToMeta and save/load
-    // methods
-
-    //? table constraints
-    private String table_primary = "";
+    // ? table constraints
+    private String table_primary = null;
     private List<Token> table_foreign = new ArrayList<>();
-    private String table_unique = "";
+    private String table_unique = null;
     private Pair<Token, Expression> table_check = new Pair<>(null, null);
 
-    //? column constraints
-    private String columns_primary = "";
-    private String column_unique = "";
-    private String column_not = "";
-    private Token column_default = null;
-    private Pair<Token, Expression> column_check = new Pair<>(null, null);
+    // ? column constraints
+    private HashMap<String, ColumnConstraints> columnConstraints = new HashMap<>();
 
     // ! temporal function to see if there are all the constraints
     public void printConstraints() {
@@ -46,13 +38,14 @@ public class Table {
         System.out.println("Foreign: " + table_foreign);
         System.out.println("Unique: " + table_unique);
         System.out.println("Check: " + table_check);
+    }
 
-        System.out.println("Column constraints:");
-        System.out.println("Primary: " + columns_primary);
-        System.out.println("Unique: " + column_unique);
-        System.out.println("Not: " + column_not);
-        System.out.println("Default: " + column_default);
-        System.out.println("Check: " + column_check);
+    private static class ColumnConstraints {
+        String primaryKey = null;
+        String unique = null;
+        String notNull = null;
+        Token defaultValue = null;
+        Pair<Token, Expression> check = new Pair<>(null, null);
     }
 
     // compile regex pattern
@@ -69,21 +62,14 @@ public class Table {
     public static Table load(Path csvFile) {
         Table table_obj = new Table();
 
-        // Get the first row of the CSV to save the column names
-        try (BufferedReader reader = new BufferedReader(
-                new FileReader(csvFile.toFile()))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(csvFile.toFile()))) {
+            // Get the first row of the CSV to save the column names
             String[] columnNames = reader.readLine().split(",");
             for (String columnName : columnNames) {
                 table_obj.columnNames.add(columnName.toUpperCase());
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading .csv file", e);
-        }
 
-        // Read the rest of the CSV file
-        try (BufferedReader reader = new BufferedReader(
-                new FileReader(csvFile.toFile()))) {
-            reader.readLine(); // skip the first row (column names)
+            // Read the rest of the CSV file
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] values = line.split(",");
@@ -93,8 +79,96 @@ public class Table {
                 }
                 table_obj.table.add(row);
             }
+
+            // Read the constraints from the XML file using the library
+            XMLParser parser = new XMLParser();
+            XMLTree tree = parser.parse(csvFile.toString().replace(".csv", ".xml"));
+            TagNode root = tree.getRoot();
+
+            // Parse table-level constraints
+            for (TagNode child : root.getChildren()) {
+                // get the constraints
+                if (child.getName().equals("primary_key")) { // PRIMARY
+                    table_obj.table_primary = child.getContent();
+                } else if (child.getName().equals("foreign_key")) { // FOREIGN
+                    List<Token> foreign = new ArrayList<>();
+                    for (Attribute attr : child.getAttributes()) {
+                        foreign.add(new Token(IDENTIFIER, attr.getValue(), null, 0, 0, 0));
+                    }
+                    table_obj.table_foreign = foreign;
+                } else if (child.getName().equals("unique")) { // UNIQUE
+                    table_obj.table_unique = child.getContent();
+                } else if (child.getName().equals("check")) { // CHECK
+                    Token column_name = null;
+                    Expression condition = null;
+                    for (Attribute attr : child.getAttributes()) {
+                        if (attr.getName().equals("column_name")) {
+                            column_name = new Token(IDENTIFIER, attr.getValue(), null, 0, 0, 0);
+                        } else if (attr.getName().equals("condition")) {
+                            Lexer lexer = new Lexer(attr.getValue());
+                            condition = new Parser(lexer.scanTokens()).expression();
+                        }
+                    }
+                    table_obj.table_check = new Pair<>(column_name, condition);
+                }
+            }
+
+            // Parse column-level constraints
+            for (TagNode columnNode : root.getChildren()) {
+                if (columnNode.getName().equals("column")) {
+                    String columnName = null;
+                    ColumnConstraints constraints = new ColumnConstraints();
+
+                    // Parse attributes within the <column> tag
+                    for (TagNode attributeNode : columnNode.getChildren()) {
+                        String nodeName = attributeNode.getName();
+                        String content = attributeNode.getContent();
+
+                        switch (nodeName) {
+                            case "name":
+                                columnName = content;
+                                break;
+                            case "type":
+                                table_obj.columnTypes.put(columnName, content);
+                                break;
+                            case "primary_key":
+                                constraints.primaryKey = content;
+                                break;
+                            case "unique":
+                                constraints.unique = content;
+                                break;
+                            case "not_null":
+                                constraints.notNull = content;
+                                break;
+                            case "default":
+                                constraints.defaultValue = new Token(IDENTIFIER, content, null, 0, 0, 0);
+                                break;
+                            case "check":
+                                Token checkColumn = null;
+                                Expression checkCondition = null;
+                                for (Attribute attr : attributeNode.getAttributes()) {
+                                    if (attr.getName().equals("column_name")) {
+                                        checkColumn = new Token(IDENTIFIER, attr.getValue(), null, 0, 0, 0);
+                                    } else if (attr.getName().equals("condition")) {
+                                        Lexer lexer = new Lexer(attr.getValue());
+                                        checkCondition = new Parser(lexer.scanTokens()).expression();
+                                    }
+                                }
+                                constraints.check = new Pair<>(checkColumn, checkCondition);
+                                break;
+                        }
+                    }
+
+                    if (columnName != null) {
+                        table_obj.columnConstraints.put(columnName, constraints);
+                    }
+                }
+            }
+
         } catch (IOException e) {
             throw new RuntimeException("Error reading .csv file", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading .xml file", e);
         }
 
         return table_obj;
@@ -150,65 +224,59 @@ public class Table {
     // Method to write metadata to a TABLE.xml file
     public void writeToMeta(Path file) {
 
-        // quit .csv from the file name
-        file = Path.of(file.toString().replace(".csv", ""));
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file.toFile() + ".xml"))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file.toString().replace(".csv", ".xml")))) {
             writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
             writer.write("<!DOCTYPE table SYSTEM \".DATABASE.dtd\">\n\n");
-
             writer.write("<table>\n");
 
-            writer.write("\t<name>" + file.getFileName().toString() + "</name>\n");
-
             writer.write("\t<columns>\n");
-            // Write the column names and data types
             for (String columnName : columnNames) {
                 writer.write("\t<column>\n");
                 writer.write("\t\t<name>" + columnName + "</name>\n");
                 writer.write("\t\t<type>" + columnTypes.get(columnName) + "</type>\n");
-                
-                if (columns_primary != null) { //? PRIMARY
-                    if (columns_primary.equals(columnName))
-                        writer.write("\t\t<primary_key> " + columns_primary + "</primary_key>\n");
-                }
 
-                if (column_unique != null) { //? UNIQUE
-                    writer.write("\t\t<unique>" + column_unique + "</unique>\n");
+                ColumnConstraints constraints = columnConstraints.get(columnName);
+                if (constraints != null) {
+                    if (constraints.primaryKey != null) {
+                        writer.write("\t\t<primary_key>" + constraints.primaryKey + "</primary_key>\n");
+                    }
+                    if (constraints.unique != null) {
+                        writer.write("\t\t<unique>" + constraints.unique + "</unique>\n");
+                    }
+                    if (constraints.notNull != null) {
+                        writer.write("\t\t<not_null>" + constraints.notNull + "</not_null>\n");
+                    }
+                    if (constraints.defaultValue != null) {
+                        writer.write("\t\t<default>" + constraints.defaultValue.lexeme + "</default>\n");
+                    }
+                    if (constraints.check.getX() != null && constraints.check.getY() != null) {
+                        writer.write("\t\t<check column_name=\"" + constraints.check.getX().lexeme + "\" condition=\""
+                                + constraints.check.getY() + "\"/>\n");
+                    }
                 }
-
-                if (column_not != null) { //? NOT
-                    writer.write("\t\t<not_null>" + column_not + "</not_null>\n");
-                }
-
-                if (column_default != null) { //? DEFAULT
-                    writer.write("\t\t<default>" + column_default.lexeme + "</default>\n");
-                }
-
-                if (column_check != null) { //? CHECK
-                    writer.write("\t\t<check column_name=\"" + column_check.getX().lexeme + "\" condition=\"" + column_check.getY() + "\"/>\n");
-                }
-
                 writer.write("\t</column>\n");
             }
             writer.write("\t</columns>\n");
 
-            if (table_primary != null) { //? PRIMARY
+            // Write table constraints
+            if (table_primary != null) {
                 writer.write("\t<primary_key>" + table_primary + "</primary_key>\n");
             }
 
-            if (table_foreign != null) { //? FOREIGN
-                writer.write("\t<foreign_key column_name=\"" + table_foreign.get(0).lexeme
-                        + "\" referenced_table=\"" + table_foreign.get(1).lexeme 
-                        + "\" referenced_column=\"" + table_foreign.get(2).lexeme + "\"/>\n");
+            if (table_foreign != null) {
+                writer.write("\t<foreign_key column_name=\"" + table_foreign.get(0).lexeme + "\" table_name=\""
+                        + table_foreign.get(1).lexeme + "\" referenced_column=\"" + table_foreign.get(2).lexeme
+                        + "\"/>\n");
             }
 
-            if (table_unique != null) { //? UNIQUE
+            if (table_unique != null) {
                 writer.write("\t<unique>" + table_unique + "</unique>\n");
             }
 
-            if (table_check.getX() != null && table_check.getY() != null) { //? CHECK
-                writer.write("\t<check column_name=\"" + table_check.getX().lexeme + "\" condition=\"" + table_check.getY() + "\"/>\n");
+            if (table_check.getX() != null && table_check.getY() != null) {
+                writer.write(
+                        "\t<check column_name=\"" + table_check.getX().lexeme + "\" condition=\"" + table_check.getY()
+                                + "\"/>\n");
             }
 
             writer.write("</table>");
@@ -231,7 +299,7 @@ public class Table {
     }
 
     // Method to add column constraints to the table
-    public void addColumnConstraint(Object... constraint) {
+    public void addColumnConstraint(String columnName, Object... constraint) {
         /*
          * if (check(PRIMARY)) //? String -> <column_name>
          * 
@@ -243,19 +311,25 @@ public class Table {
          * 
          * if (check(CHECK)) //? Pair<Token, Expression> -> <column_name, expression>
          */
+        if (!columnConstraints.containsKey(columnName)) {
+            columnConstraints.put(columnName, new ColumnConstraints());
+        }
+
+        ColumnConstraints constraints = columnConstraints.get(columnName);
+
         for (Object c : constraint) {
-            if (c instanceof String) { // can be PRIMARY, UNIQUE, NOT
-                if (c.equals("PRIMARY")) {
-                    columns_primary = (String) c;
+            if (c instanceof String) {
+                if (c.equals("PRIMARY KEY")) {
+                    constraints.primaryKey = columnName;
                 } else if (c.equals("UNIQUE")) {
-                    column_unique = (String) c;
-                } else if (c.equals("NOT")) {
-                    column_not = (String) c;
+                    constraints.unique = columnName;
+                } else if (c.equals("NOT NULL")) {
+                    constraints.notNull = columnName;
                 }
-            } else if (c instanceof Token) { // DEFAULT
-                column_default = (Token) c;
-            } else if (c instanceof Pair) { // CHECK
-                column_check = (Pair<Token, Expression>) c;
+            } else if (c instanceof Token) {
+                constraints.defaultValue = (Token) c;
+            } else if (c instanceof Pair) {
+                constraints.check = (Pair<Token, Expression>) c;
             }
         }
     }
@@ -265,7 +339,8 @@ public class Table {
         /*
          * if (check(PRIMARY)) //? String -> <column_name>
          * 
-         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name, referenced_column>
+         * if (check(FOREIGN)) //? List<Token> -> <column_name, table_name,
+         * referenced_column>
          * 
          * if (check(UNIQUE)) //? String -> <column_name>
          * 
@@ -273,7 +348,7 @@ public class Table {
          */
         for (Object c : constraint) {
             if (c instanceof String) { // can be PRIMARY or UNIQUE
-                if (c.equals("PRIMARY")) {
+                if (c.equals("PRIMARY KEY")) {
                     table_primary = (String) c;
                 } else if (c.equals("UNIQUE")) {
                     table_unique = (String) c;
@@ -284,7 +359,7 @@ public class Table {
                 table_check = (Pair<Token, Expression>) c;
             }
         }
-            
+
     }
 
     // Method to add a row to the table
@@ -431,8 +506,6 @@ public class Table {
         if (index < 0 || index >= table.size()) {
             return;
         }
-
-        // TODO: validate the value based on the column type
 
         table.get(index).put(key, value);
     }

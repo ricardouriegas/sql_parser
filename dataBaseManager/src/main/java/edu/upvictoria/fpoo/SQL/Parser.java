@@ -379,7 +379,7 @@ public class Parser {
 
     // expression = orExpression
     // orExpression = andExpression (OR andExpression)*
-    private Expression expression() {
+    public Expression expression() {
         Expression andExpression = andExpression();
 
         while (match(OR)) {

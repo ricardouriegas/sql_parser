@@ -36,7 +36,6 @@ import edu.upvictoria.fpoo.SQL.Token;
  */
 public class App {
     private static final Interpreter interpreter = new Interpreter();
-
     public static void main(String[] args) throws IOException {
         if (args.length == 0) { // to run with prompting
             runPrompt();
