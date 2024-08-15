@@ -9,6 +9,8 @@ import java.nio.file.Path;
 
 import com.xml_parser.XMLParser.*;
 
+// TODO: When creating the XML all the types are saved as type String
+
 public class Table {
     // List[1] <Key, Value> the key is the column name and the value is the value of
     // the row
@@ -40,7 +42,7 @@ public class Table {
         System.out.println("Check: " + table_check);
     }
 
-    private static class ColumnConstraints {
+    public static class ColumnConstraints {
         String primaryKey = null;
         String unique = null;
         String notNull = null;
@@ -434,22 +436,6 @@ public class Table {
         return column;
     }
 
-    public void addColumn(String columnName, Object value) {
-        // Check if the column name already exists
-        if (columnNames.contains(columnName)) {
-            ErrorHandler.error("Column '" + columnName + "' already exists.");
-        }
-
-        // Add the column name and data type to the table
-        columnNames.add(columnName);
-        columnTypes.put(columnName, "String");
-
-        // Add the value to the rows
-        for (HashMap<String, Object> row : table) {
-            row.put(columnName, value);
-        }
-    }
-
     public void removeDuplicates(String columnName) {
         // Check if the column name exists
         if (!columnNames.contains(columnName)) {
@@ -490,6 +476,11 @@ public class Table {
 
     // Method to add a column name and data type to the table
     public void addColumn(String columnName, String dataType) {
+        // check if the column name already exists
+        if (columnNames.contains(columnName)) {
+            ErrorHandler.error("Column '" + columnName + "' already exists.");
+        }
+
         columnNames.add(columnName);
         columnTypes.put(columnName, dataType);
     }
@@ -538,6 +529,11 @@ public class Table {
     // Method get rows (list of rows)
     public List<HashMap<String, Object>> getRows() {
         return table;
+    }
+
+    // Method to get a column constraints
+    public ColumnConstraints getColumnConstraints(String columnName) {
+        return columnConstraints.get(columnName);
     }
 
     // Mehtod to limit the number of rows

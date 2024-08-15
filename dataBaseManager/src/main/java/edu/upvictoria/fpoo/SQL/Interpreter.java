@@ -4,6 +4,9 @@ import static edu.upvictoria.fpoo.SQL.TokenType.*;
 
 import java.io.File;
 import java.util.*;
+
+import edu.upvictoria.fpoo.SQL.Table.ColumnConstraints;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -178,7 +181,7 @@ public class Interpreter
         // columnDefinition = [[name, type, constraint], [name, type, constraint], ...]
         for (List<Object> column : clause.columnsDefinition) {
             // add the column name and the data type
-            table.addColumn(column.get(0).toString(), column.get(1)); 
+            table.addColumn(column.get(0).toString(), column.get(1).toString()); 
             
             if (column.size() == 2) 
                 continue;
@@ -229,6 +232,15 @@ public class Interpreter
         for (String key : clause.valuesMap.keySet()) {
             // evaluate the value
             Object value = evaluate(clause.valuesMap.get(key));
+
+            // validate type data
+            // if (value != null && !table.getColumnType(key).equals(value.getClass())) {
+            //     ErrorHandler.error("The value " + value + " does not match the column type");
+            // }
+
+            // validate that the value complies with the column constraints
+            validateColumnConstraints(key, value);
+
             row.put(key, value);
         }
 
@@ -244,8 +256,15 @@ public class Interpreter
         // check if the row has all the columns
         for (String columnName : columnNames) {
             if (!row.containsKey(columnName)) {
-                // TODO: when adding constraints we should validate if the column is nullable
-                row.put(columnName, null);
+                // check if the column has a default value or is nullable
+                ColumnConstraints constraints = table.getColumnConstraints(columnName);
+                if (constraints.defaultValue != null) {
+                    row.put(columnName, constraints.defaultValue);
+                } else if (constraints.notNull == null) {
+                    row.put(columnName, null);
+                } else {
+                    ErrorHandler.error("The column " + columnName + " cannot be null");
+                }
             }
         }
 
@@ -303,6 +322,9 @@ public class Interpreter
                     // evaluate the value
                     Object value = evaluate(clause.valuesMap.get(key));
 
+                    // validate that the value complies with the column constraints
+                    validateColumnConstraints(key, value);
+
                     // if the value is a string put it in quotes
                     table.updateRow(key, value, i);
                 }
@@ -310,6 +332,71 @@ public class Interpreter
         }
 
         currentRow = null;
+
+    }
+
+
+    private void validateColumnConstraints(String key, Object value) {
+        // validate type data
+        switch (table.getColumnType(key).toUpperCase()) {
+            case "STRING":
+                if (!(value instanceof String)) {
+                    ErrorHandler.error("The value " + value + " does not match the column type");
+                }
+                break;
+            case "NUMBER":
+                if (!(value instanceof Double)) {
+                    ErrorHandler.error("The value " + value + " does not match the column type");
+                }
+                break;
+            case "BOOLEAN":
+                if (!(value instanceof Boolean)) {
+                    ErrorHandler.error("The value " + value + " does not match the column type");
+                }
+                break;
+            default:
+                ErrorHandler.error("Unknown column type");
+        }
+        
+        // get the constraints of the column
+        ColumnConstraints constraints = table.getColumnConstraints(key);
+
+        // check if the value is a default
+        if (constraints.defaultValue != null) {
+            for (HashMap<String, Object> row : table.getRows()) {
+                if (row.get(key) == null) {
+                    row.put(key, constraints.defaultValue);
+                }
+            }
+        }
+
+        // check if the value is null
+        if (value == null && constraints.notNull == null) {
+            ErrorHandler.error("The column " + key + " cannot be null");
+        }
+
+        // check if the value is unique
+        if (constraints.unique != null) {
+            for (HashMap<String, Object> row : table.getRows()) {
+                if (row.get(key).equals(value)) {
+                    ErrorHandler.error("The column " + key + " must be unique");
+                }
+            }
+        }
+
+        // check if the value is a primary key
+        if (constraints.primaryKey != null) {
+            for (HashMap<String, Object> row : table.getRows()) {
+                if (row.get(key).equals(value)) {
+                    ErrorHandler.error("The column " + key + " must be a primary key");
+                }
+            }
+        }
+
+        // check if the value is a check
+        if (constraints.check != null) {
+            // here we should evaluate the check
+        }
 
     }
 
