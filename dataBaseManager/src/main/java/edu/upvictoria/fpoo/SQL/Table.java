@@ -63,15 +63,13 @@ public class Table {
     // Method to load data from a CSV file into a Table object
     public static Table load(Path csvFile) {
         Table table_obj = new Table();
-
+    
         try (BufferedReader reader = new BufferedReader(new FileReader(csvFile.toFile()))) {
-            // Get the first row of the CSV to save the column names
             String[] columnNames = reader.readLine().split(",");
             for (String columnName : columnNames) {
                 table_obj.columnNames.add(columnName.toUpperCase());
             }
-
-            // Read the rest of the CSV file
+    
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] values = line.split(",");
@@ -81,101 +79,80 @@ public class Table {
                 }
                 table_obj.table.add(row);
             }
-
-            // Read the constraints from the XML file using the library
+    
             XMLParser parser = new XMLParser();
             XMLTree tree = parser.parse(csvFile.toString().replace(".csv", ".xml"));
             TagNode root = tree.getRoot();
-
-            // Parse table-level constraints
+    
+            // Parse column definitions and constraints within <columns>
+            for (TagNode columnsNode : root.getChildren()) {
+                if (columnsNode.getName().equals("columns")) {
+                    for (TagNode columnNode : columnsNode.getChildren()) {
+                        if (columnNode.getName().equals("column")) {
+                            String columnName = null;
+                            ColumnConstraints constraints = new ColumnConstraints();
+    
+                            for (TagNode attributeNode : columnNode.getChildren()) {
+                                String nodeName = attributeNode.getName();
+                                String content = attributeNode.getContent();
+    
+                                switch (nodeName) {
+                                    case "name":
+                                        columnName = content;
+                                        break;
+                                    case "type":
+                                        table_obj.columnTypes.put(columnName, content);
+                                        break;
+                                    case "primary_key":
+                                        constraints.primaryKey = content;
+                                        table_obj.table_primary = content; // assuming only one primary key
+                                        break;
+                                    case "unique":
+                                        constraints.unique = content;
+                                        break;
+                                    case "not_null":
+                                        constraints.notNull = content;
+                                        break;
+                                    case "default":
+                                        constraints.defaultValue = new Token(IDENTIFIER, content, null, 0, 0, 0);
+                                        break;
+                                    case "check":
+                                        Token checkColumn = new Token(IDENTIFIER, attributeNode.getAttributes().get(0).getValue(), null, 0, 0, 0);
+                                        Lexer lexer = new Lexer(attributeNode.getAttributes().get(1).getValue());
+                                        Expression checkCondition = new Parser(lexer.scanTokens()).expression();
+                                        constraints.check = new Pair<>(checkColumn, checkCondition);
+                                        break;
+                                }
+                            }
+    
+                            if (columnName != null) {
+                                table_obj.columnConstraints.put(columnName, constraints);
+                            }
+                        }
+                    }
+                }
+            }
+    
+            // Parse table-level constraints (like foreign keys) outside <columns>
             for (TagNode child : root.getChildren()) {
-                // get the constraints
-                if (child.getName().equals("primary_key")) { // PRIMARY
-                    table_obj.table_primary = child.getContent();
-                } else if (child.getName().equals("foreign_key")) { // FOREIGN
+                if (child.getName().equals("foreign_key")) {
                     List<Token> foreign = new ArrayList<>();
                     for (Attribute attr : child.getAttributes()) {
                         foreign.add(new Token(IDENTIFIER, attr.getValue(), null, 0, 0, 0));
                     }
                     table_obj.table_foreign = foreign;
-                } else if (child.getName().equals("unique")) { // UNIQUE
-                    table_obj.table_unique = child.getContent();
-                } else if (child.getName().equals("check")) { // CHECK
-                    Token column_name = null;
-                    Expression condition = null;
-                    for (Attribute attr : child.getAttributes()) {
-                        if (attr.getName().equals("column_name")) {
-                            column_name = new Token(IDENTIFIER, attr.getValue(), null, 0, 0, 0);
-                        } else if (attr.getName().equals("condition")) {
-                            Lexer lexer = new Lexer(attr.getValue());
-                            condition = new Parser(lexer.scanTokens()).expression();
-                        }
-                    }
-                    table_obj.table_check = new Pair<>(column_name, condition);
                 }
             }
-
-            // Parse column-level constraints
-            for (TagNode columnNode : root.getChildren()) {
-                if (columnNode.getName().equals("column")) {
-                    String columnName = null;
-                    ColumnConstraints constraints = new ColumnConstraints();
-
-                    // Parse attributes within the <column> tag
-                    for (TagNode attributeNode : columnNode.getChildren()) {
-                        String nodeName = attributeNode.getName();
-                        String content = attributeNode.getContent();
-
-                        switch (nodeName) {
-                            case "name":
-                                columnName = content;
-                                break;
-                            case "type":
-                                table_obj.columnTypes.put(columnName, content);
-                                break;
-                            case "primary_key":
-                                constraints.primaryKey = content;
-                                break;
-                            case "unique":
-                                constraints.unique = content;
-                                break;
-                            case "not_null":
-                                constraints.notNull = content;
-                                break;
-                            case "default":
-                                constraints.defaultValue = new Token(IDENTIFIER, content, null, 0, 0, 0);
-                                break;
-                            case "check":
-                                Token checkColumn = null;
-                                Expression checkCondition = null;
-                                for (Attribute attr : attributeNode.getAttributes()) {
-                                    if (attr.getName().equals("column_name")) {
-                                        checkColumn = new Token(IDENTIFIER, attr.getValue(), null, 0, 0, 0);
-                                    } else if (attr.getName().equals("condition")) {
-                                        Lexer lexer = new Lexer(attr.getValue());
-                                        checkCondition = new Parser(lexer.scanTokens()).expression();
-                                    }
-                                }
-                                constraints.check = new Pair<>(checkColumn, checkCondition);
-                                break;
-                        }
-                    }
-
-                    if (columnName != null) {
-                        table_obj.columnConstraints.put(columnName, constraints);
-                    }
-                }
-            }
-
+    
         } catch (IOException e) {
-            throw new RuntimeException("Error reading .csv file", e);
+            ErrorHandler.error("Error reading .csv file: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Error reading .xml file", e);
+            ErrorHandler.error("Error reading .xml file: " + e.getMessage());
         }
-
+    
         return table_obj;
     }
-
+    
     private static Object parseValue(String value) {
         if (value.startsWith("\"") && value.endsWith("\"")) {
             return value.substring(1, value.length() - 1);
@@ -248,8 +225,10 @@ public class Table {
                     if (constraints.notNull != null) {
                         writer.write("\t\t<not_null>" + constraints.notNull + "</not_null>\n");
                     }
+                    // TODO: on the XML parser it should be able of parsing the default value even if is written
+                    // with quotes, but for now it will be saved without quotes
                     if (constraints.defaultValue != null) {
-                        writer.write("\t\t<default>" + constraints.defaultValue.lexeme + "</default>\n");
+                        writer.write("\t\t<default>" + constraints.defaultValue.lexeme.replace("\"", "") + "</default>\n");
                     }
                     if (constraints.check.getX() != null && constraints.check.getY() != null) {
                         writer.write("\t\t<check column_name=\"" + constraints.check.getX().lexeme + "\" condition=\""

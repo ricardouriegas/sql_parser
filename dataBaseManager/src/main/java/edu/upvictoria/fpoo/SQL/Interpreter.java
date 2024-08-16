@@ -41,7 +41,7 @@ public class Interpreter
     public Path getDataBase() {
         return folder;
     }
-    
+
     public void setDataBase(Path path) {
         this.folder = path;
     }
@@ -56,6 +56,7 @@ public class Interpreter
 
     /**
      * Interpret the clause
+     * 
      * @param clause
      */
     public void interpret(Clause clause) {
@@ -181,9 +182,9 @@ public class Interpreter
         // columnDefinition = [[name, type, constraint], [name, type, constraint], ...]
         for (List<Object> column : clause.columnsDefinition) {
             // add the column name and the data type
-            table.addColumn(column.get(0).toString(), column.get(1).toString()); 
-            
-            if (column.size() == 2) 
+            table.addColumn(column.get(0).toString(), column.get(1).toString());
+
+            if (column.size() == 2)
                 continue;
 
             // add the constraints of the column
@@ -219,7 +220,7 @@ public class Interpreter
             ErrorHandler.error(clause.token, "The table does not exist");
         }
 
-        Table table = Table.load(file);
+        table = Table.load(file);
         if (table == null) {
             ErrorHandler.error(clause.token, "Error loading the table");
         }
@@ -234,12 +235,30 @@ public class Interpreter
             Object value = evaluate(clause.valuesMap.get(key));
 
             // validate type data
-            // if (value != null && !table.getColumnType(key).equals(value.getClass())) {
-            //     ErrorHandler.error("The value " + value + " does not match the column type");
-            // }
+            switch (table.getColumnType(key).toUpperCase()) {
+                case "STRING":
+                    if (!(value instanceof String)) {
+                        ErrorHandler.error("The value " +
+                                value + " does not match the column type");
+                    }
+                    break;
+                case "NUMBER":
+                    if (!(value instanceof Double)) {
+                        ErrorHandler.error("The value " +
+                                value + " does not match the column type");
+                    }
+                    break;
+                case "BOOLEAN":
+                    if (!(value instanceof Boolean)) {
+                        ErrorHandler.error("The value " +
+                                value + " does not match the column type");
+                    }
+                    break;
+                default:
+                    ErrorHandler.error("Unknown column type");
+            }
 
-            // validate that the value complies with the column constraints
-            validateColumnConstraints(key, value);
+            validateColumnConstraintsInsert(key, value);
 
             row.put(key, value);
         }
@@ -258,8 +277,10 @@ public class Interpreter
             if (!row.containsKey(columnName)) {
                 // check if the column has a default value or is nullable
                 ColumnConstraints constraints = table.getColumnConstraints(columnName);
+
+                // validate that the value complies with the column constraints
                 if (constraints.defaultValue != null) {
-                    row.put(columnName, constraints.defaultValue);
+                    row.put(columnName, constraints.defaultValue.lexeme);
                 } else if (constraints.notNull == null) {
                     row.put(columnName, null);
                 } else {
@@ -277,6 +298,53 @@ public class Interpreter
 
         return null;
     }
+
+    // validate the constraints of the column
+    private void validateColumnConstraintsInsert(String key, Object value) {
+
+        // get the constraints of the column
+        ColumnConstraints constraints = table.getColumnConstraints(key);
+
+        // check if the value is unique
+        if (constraints.unique != null) {
+            for (HashMap<String, Object> row : table.getRows()) {
+                if (row.get(key).equals(value)) {
+                    ErrorHandler.error("The column " + key + " must be unique");
+                }
+            }
+        }
+
+        // check if the value is a primary key
+        if (constraints.primaryKey != null) {
+            for (HashMap<String, Object> row : table.getRows()) {
+                if (row.get(key).equals(value)) {
+                    ErrorHandler.error("The column " + key + " must be a primary key");
+                }
+            }
+        }
+
+        // check if the value is a check
+        if (constraints.check.getX() != null || constraints.check.getY() != null) {
+            // evaluate the check, we have <column_name, expression>
+            // we should evaluate the expression
+            // if the expression is false, throw an error
+            conditionCheck(constraints.check.getY(), key, value);
+        }
+
+    }
+
+    private void conditionCheck(Expression condition, String key, Object value) {
+        Object result = evaluate(condition);
+
+        if (!(result instanceof Boolean)) {
+            ErrorHandler.error("The check condition must return a boolean");
+        }
+
+        if (!(boolean) result) {
+            ErrorHandler.error("The value " + value + " does not comply with the check condition");
+        }
+    }
+
 
     // update clause
     @Override
@@ -322,8 +390,32 @@ public class Interpreter
                     // evaluate the value
                     Object value = evaluate(clause.valuesMap.get(key));
 
+                    // validate type data
+                    switch (table.getColumnType(key).toUpperCase()) {
+                        case "STRING":
+                            if (!(value instanceof String)) {
+                                ErrorHandler.error("The value " +
+                                        value + " does not match the column type");
+                            }
+                            break;
+                        case "NUMBER":
+                            if (!(value instanceof Double)) {
+                                ErrorHandler.error("The value " +
+                                        value + " does not match the column type");
+                            }
+                            break;
+                        case "BOOLEAN":
+                            if (!(value instanceof Boolean)) {
+                                ErrorHandler.error("The value " +
+                                        value + " does not match the column type");
+                            }
+                            break;
+                        default:
+                            ErrorHandler.error("Unknown column type");
+                    }
+
                     // validate that the value complies with the column constraints
-                    validateColumnConstraints(key, value);
+                    validateColumnConstraintsUpdate(key, value);
 
                     // if the value is a string put it in quotes
                     table.updateRow(key, value, i);
@@ -335,37 +427,16 @@ public class Interpreter
 
     }
 
+    private void validateColumnConstraintsUpdate(String key, Object value) {
 
-    private void validateColumnConstraints(String key, Object value) {
-        // validate type data
-        switch (table.getColumnType(key).toUpperCase()) {
-            case "STRING":
-                if (!(value instanceof String)) {
-                    ErrorHandler.error("The value " + value + " does not match the column type");
-                }
-                break;
-            case "NUMBER":
-                if (!(value instanceof Double)) {
-                    ErrorHandler.error("The value " + value + " does not match the column type");
-                }
-                break;
-            case "BOOLEAN":
-                if (!(value instanceof Boolean)) {
-                    ErrorHandler.error("The value " + value + " does not match the column type");
-                }
-                break;
-            default:
-                ErrorHandler.error("Unknown column type");
-        }
-        
         // get the constraints of the column
         ColumnConstraints constraints = table.getColumnConstraints(key);
 
         // check if the value is a default
-        if (constraints.defaultValue != null) {
+        if (constraints.defaultValue != null && value == null) {
             for (HashMap<String, Object> row : table.getRows()) {
                 if (row.get(key) == null) {
-                    row.put(key, constraints.defaultValue);
+                    row.put(key, constraints.defaultValue.lexeme);
                 }
             }
         }
@@ -395,7 +466,10 @@ public class Interpreter
 
         // check if the value is a check
         if (constraints.check != null) {
-            // here we should evaluate the check
+            // evaluate the check, we have <column_name, expression>
+            // we should evaluate the expression
+            // if the expression is false, throw an error
+            conditionCheck(constraints.check.getY(), key, value);
         }
 
     }
@@ -742,22 +816,22 @@ public class Interpreter
 
         switch (expr.operator.type) {
             case PLUS:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 checkNumberOperands(left, right);
                 return (double) left + (double) right;
             case MINUS:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 checkNumberOperands(left, right);
                 return (double) left - (double) right;
             case SLASH:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 checkNumberOperands(left, right);
                 return (double) left / (double) right;
             case DIV:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 // should be integer division
                 checkNumberOperands(left, right);
@@ -774,32 +848,32 @@ public class Interpreter
                 checkNumberOperands(left, right);
                 return (double) left % (double) right;
             case PORCENTAJE:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 checkNumberOperands(left, right);
                 return (double) left % (double) right;
             case STAR:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 checkNumberOperands(left, right);
                 return (double) left * (double) right;
             case GREATER:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     ErrorHandler.error("Cannot use null in a comparation");
                 checkNumberOperands(left, right);
                 return (double) left > (double) right;
             case GREATER_EQUAL:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     ErrorHandler.error("Cannot use null in a comparation");
                 checkNumberOperands(left, right);
                 return (double) left > (double) right;
             case LESS:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     ErrorHandler.error("Cannot use null in a comparation");
                 checkNumberOperands(left, right);
                 return (double) left < (double) right;
             case LESS_EQUAL:
-            if (left == null || right == null)
+                if (left == null || right == null)
                     return null;
                 checkNumberOperands(left, right);
                 return (double) left <= (double) right;
