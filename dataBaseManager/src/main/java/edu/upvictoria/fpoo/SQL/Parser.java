@@ -50,7 +50,7 @@ public class Parser {
     }
 
     // statement = useStmnt | createTableStmnt | insertStmnt | updateStmnt
-    // | selectStmnt | deleteStmnt | dropStmnt | showTableStmnt
+    // | selectStmnt | deleteStmnt | dropStmnt | showTableStmnt | alterStmnt
     private Clause sentence() {
         if (match(USE))
             return useStmnt();
@@ -68,6 +68,8 @@ public class Parser {
             return deleteStmnt();
         if (match(SHOW))
             return showStmnt();
+        if (match(ALTER))
+            return alterStmnt();
 
         throw error(peek(), "Expected statement.");
     }
@@ -705,6 +707,52 @@ public class Parser {
 
         return new Clause.DeleteClause(table_name, where_expression);
     }
+
+    /**************************************************************************/
+    /**************************** ALTER **********************************/
+    /**************************************************************************/
+    // alterStmnt = ALTER TABLE tableName (ADD columnDef | DROP columnName | MODIFY columnDef)
+    private Clause alterStmnt() {
+        consume(TABLE, "Expected keyword TABLE after ALTER.");
+        Token table_name = consume(IDENTIFIER, "Expected table name after TABLE.");
+
+        if (match(ADD)) {
+            return addColumn(table_name);
+        }
+
+        if (match(DROP)) {
+            return dropColumn(table_name);
+        }
+
+        if (match(MODIFY)) {
+            return modifyColumn(table_name);
+        }
+
+        throw error(peek(), "Expected ADD, DROP or MODIFY after TABLE.");
+    }
+
+    // columnDef = columnName dataType (columnConstraint)*
+    private Clause addColumn(Token table_name) {
+        consume(ADD, "Expected keyword ADD after ALTER TABLE.");
+        List<Object> columnDefinition = columnDefinition();
+
+        return new Clause.AlterClause(table_name, "ADD", columnDefinition, null);
+    }
+
+    // drop columnName
+    private Clause dropColumn(Token table_name) {
+        consume(DROP, "Expected keyword DROP after ALTER TABLE.");
+        Token column_name = consume(IDENTIFIER, "Expected column name after DROP.");
+        return new Clause.AlterClause(table_name, "DROP", null, column_name.lexeme);
+    }
+
+    // modify columnDef
+    private Clause modifyColumn(Token table_name) {
+        consume(MODIFY, "Expected keyword MODIFY after ALTER TABLE.");
+        List<Object> columnDefinition = columnDefinition();
+        return new Clause.AlterClause(table_name, "MODIFY", columnDefinition, null);
+    }
+
 
     /**************************************************************************/
     /**************************** SHOW TABLES *********************************/

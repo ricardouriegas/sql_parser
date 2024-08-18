@@ -453,6 +453,20 @@ public class Table {
         }
     }
 
+    // Method to modify a column
+    public void modifyColumn(String columnName, String newColumnName) {
+        if (!columnNames.contains(columnName)) {
+            return;
+        }
+        columnNames.set(columnNames.indexOf(columnName), newColumnName);
+        columnTypes.put(newColumnName, columnTypes.get(columnName));
+        columnTypes.remove(columnName);
+        for (HashMap<String, Object> row : table) {
+            row.put(newColumnName, row.get(columnName));
+            row.remove(columnName);
+        }
+    }
+
     // Method to add a column name and data type to the table
     public void addColumn(String columnName, String dataType) {
         // check if the column name already exists

@@ -50,6 +50,38 @@ public class AstPrinter implements Expression.Visitor<String>, Clause.Visitor<St
     }
 
     @Override
+    public String alterClause(Clause.AlterClause clause) {
+        // Implementation for AlterClause printing
+        StringBuilder builder = new StringBuilder();
+        builder.append("ALTER TABLE ").append(clause.table_name.lexeme).append(" ");
+        switch (clause.type) {
+            case "ADD":
+                builder.append("ADD ");
+                break;
+            case "MODIFY":
+                builder.append("MODIFY ");
+                break;
+            case "DROP":
+                builder.append("DROP ");
+                break;
+            default:
+                break;
+        }
+
+        if (clause.type.equals("DROP")) {
+            builder.append(clause.column_name);
+        } else {
+            builder.append(clause.columnsDefinition.get(0)).append(" ");
+            builder.append(clause.columnsDefinition.get(1)).append(" ");
+            if (clause.columnsDefinition.size() == 3) {
+                builder.append(clause.columnsDefinition.get(2)).append(" ");
+            }
+        }
+
+        return builder.toString();
+    }
+
+    @Override
     public String updateClause(Clause.UpdateClause clause) {
         // Implementation for UpdateClause printing
         StringBuilder builder = new StringBuilder();

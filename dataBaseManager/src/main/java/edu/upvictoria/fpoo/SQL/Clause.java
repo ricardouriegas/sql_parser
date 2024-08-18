@@ -20,6 +20,8 @@ public abstract class Clause {
         
         R deleteClause(DeleteClause clause);
 
+        R alterClause(AlterClause clause);
+
         R queryClause(QueryClause clause);
 
         R showClause();
@@ -146,6 +148,26 @@ public abstract class Clause {
 
         final Token table_name;
         final Expression where_expression;
+    }
+
+    static class AlterClause extends Clause {
+        AlterClause(Token table_name, String type, List<Object> columnsDefinition, String column_name) {
+            this.table_name = table_name;
+            this.type = type;
+            this.columnsDefinition = columnsDefinition;
+            this.column_name = column_name;
+        }
+
+        @Override
+        public
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.alterClause(this);
+        }
+
+        final Token table_name;
+        final String type;
+        final List<Object> columnsDefinition;
+        final String column_name;
     }
 
     // query clause

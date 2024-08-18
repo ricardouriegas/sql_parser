@@ -494,6 +494,69 @@ public class Interpreter
         return null;
     }
 
+    // alter clause
+    @Override
+    public Void alterClause(Clause.AlterClause clause) {
+        if (folder == null) {
+            ErrorHandler.error("You must USE a database first");
+        }
+
+        Path file = folder.resolve(clause.table_name.lexeme + ".csv");
+
+        if (!file.toFile().exists()) {
+            ErrorHandler.error(clause.table_name, "The table does not exist");
+        }
+
+        table = Table.load(file);
+        if (table == null) {
+            ErrorHandler.error(clause.table_name, "Error loading the table");
+        }
+
+        // alter the table based on the type
+        switch (clause.type) {
+            case "ADD":
+                visit_add_column(clause);
+                break;
+            case "DROP":
+                visit_drop_column(clause);
+                break;
+            case "MODIFY":
+                visit_modify_column(clause);
+                break;
+            default:
+                ErrorHandler.error("Unknown type");
+        }
+
+        // save the table
+        table.save(file);
+        table.writeToMeta(file);
+
+        result = "Table " + clause.table_name.lexeme + " altered";
+
+        return null;
+    }
+
+    // add column
+    private void visit_add_column(Clause.AlterClause clause) {
+        // add the column to the table
+        for (Object column : clause.columnsDefinition) {
+            // add the column name and the data type
+            table.addColumn(column.toString(), column.toString());
+        }
+    }
+
+    // drop column
+    private void visit_drop_column(Clause.AlterClause clause) {
+        // drop the column from the table
+        table.deleteColumn(clause.column_name);
+    }
+
+    // modify column
+    private void visit_modify_column(Clause.AlterClause clause) {
+        // modify the column from the table
+        table.modifyColumn(clause.column_name, clause.columnsDefinition.get(0).toString());
+    }
+
     // select clause
     @Override
     public Void selectClause(Clause.SelectClause clause) {

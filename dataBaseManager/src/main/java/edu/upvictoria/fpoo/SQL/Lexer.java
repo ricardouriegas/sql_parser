@@ -53,6 +53,7 @@ public class Lexer {
         keywords.put("INSERT", INSERT);
         keywords.put("UPDATE", UPDATE);
         keywords.put("DELETE", DELETE);
+        keywords.put("ALTER", ALTER);
 
         keywords.put("WHERE", WHERE);
         keywords.put("FROM", FROM);
@@ -72,6 +73,9 @@ public class Lexer {
         keywords.put("SHOW", SHOW);
         keywords.put("GROUP", GROUP);
         keywords.put("BY", COUNT);
+        keywords.put("ADD", ADD);
+        keywords.put("COLUMN", COLUMN);
+        keywords.put("MODIFY", MODIFY);
 
         // part 2 add functions
         keywords.put("MOD", MOD);
