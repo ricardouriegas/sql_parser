@@ -250,7 +250,7 @@ public class Table {
                 writer.write("\t<primary_key>" + table_primary + "</primary_key>\n");
             }
 
-            if (table_foreign != null) {
+            if (table_foreign != null && table_foreign.size() == 3) {
                 writer.write("\t<foreign_key column_name=\"" + table_foreign.get(0).lexeme + "\" table_name=\""
                         + table_foreign.get(1).lexeme + "\" referenced_column=\"" + table_foreign.get(2).lexeme
                         + "\"/>\n");
@@ -349,10 +349,37 @@ public class Table {
 
     }
 
+    // Method to get the table constraints
+    public List<Object> getTableConstraints() {
+        List<Object> constraints = new ArrayList<>();
+        if (table_primary != null) {
+            constraints.add(table_primary);
+        }
+        if (table_foreign != null) {
+            constraints.add(table_foreign);
+        }
+        if (table_unique != null) {
+            constraints.add(table_unique);
+        }
+        if (table_check.getX() != null && table_check.getY() != null) {
+            constraints.add(table_check);
+        }
+        return constraints;
+    }
+
     // Method to add a row to the table
     public void addRow(HashMap<String, Object> row) {
         // add the row to the table
         table.add(row);
+    }
+
+    // Mehot to get the column values
+    public List<Object> getColumnValues(String columnName) {
+        List<Object> values = new ArrayList<>();
+        for (HashMap<String, Object> row : table) {
+            values.add(row.get(columnName));
+        }
+        return values;
     }
 
     // Method to add a column to the table (for the select)
@@ -525,6 +552,7 @@ public class Table {
     public List<HashMap<String, Object>> getRows() {
         return table;
     }
+
 
     // Method to get a column constraints
     public ColumnConstraints getColumnConstraints(String columnName) {

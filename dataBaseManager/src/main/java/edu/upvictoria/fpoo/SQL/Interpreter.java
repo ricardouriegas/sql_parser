@@ -193,9 +193,27 @@ public class Interpreter
             }
         }
 
+        if (clause.tableConstraints.size() == 0) {
+            // save the table
+            table.save(file);
+            table.writeToMeta(file);
+
+            result = "Table " + clause.name.lexeme + " created";
+
+            return null;
+        }
+
         // add the table constraints
         for (Object constraint : clause.tableConstraints) {
-            table.addTableConstraint(constraint);
+            if (constraint instanceof List) {
+                // add the foreign key constraint
+                if (checkForeignKey(constraint)) 
+                    table.addTableConstraint(constraint);
+                
+            } else {
+                // add the constraint
+                table.addTableConstraint(constraint);
+            }
         }
 
         // save the table
@@ -205,6 +223,41 @@ public class Interpreter
         result = "Table " + clause.name.lexeme + " created";
 
         return null;
+    }
+
+    /**
+     * Function to check if the foreign key is correct
+     */
+    public Boolean checkForeignKey(Object constraint) {
+        List<Token> list = (List<Token>) constraint;
+        if (list.size() != 3) { // List<Token> := [foreing_key_name, table_name, column_name]
+            ErrorHandler.error("The FOREIGN KEY constraint is not valid");
+        }
+
+        // check if the table exists
+        Path file2 = folder.resolve(list.get(1).lexeme + ".csv");
+        if (!file2.toFile().exists()) {
+            ErrorHandler.error("The table " + list.get(1).lexeme + " does not exist");
+        }
+
+        // check if the column exists
+        Table table2 = Table.load(file2);
+        if (table2 == null) {
+            ErrorHandler.error("Error loading the referenced table");
+        }
+
+        if (!table2.getColumnNames().contains(list.get(2).lexeme)) {
+            ErrorHandler.error(
+                    "The column " + list.get(2).lexeme + " does not exist in the table " + list.get(0).toString());
+        }
+
+        // check if the column is a primary key with a unique constraint
+        ColumnConstraints constraints = table2.getColumnConstraints(list.get(2).lexeme);
+        if (constraints == null || constraints.primaryKey == null && constraints.unique == null) {
+            ErrorHandler.error("The column " + list.get(2).lexeme + " must be a primary key or unique");
+        }
+
+        return true;
     }
 
     // insert clause
@@ -289,6 +342,47 @@ public class Interpreter
             }
         }
 
+        // check if theres not a foreign key constraint
+        if (!thereIsAForeignKeyConstraint(table)) {
+            table.addRow(row);
+            table.save(file);
+            result = "Row inserted";
+            return null;
+        }
+
+        // validate foreign key constraints
+        for (String key : row.keySet()) {
+            List<Object> constraintsList = table.getTableConstraints();
+            for (Object constraint : constraintsList) {
+                if (constraint instanceof List) {
+                    List<Token> list = (List<Token>) constraint;
+
+                    if (list.size() != 3)  // List<Token> := [foreing_key_name, table_name, column_name]
+                        continue;
+                    
+
+                    if (list.get(0).lexeme.equals(key)) {
+                        // check if the value exists in the referenced table
+                        Path file2 = folder.resolve(list.get(1).lexeme + ".csv");
+                        Table table2 = Table.load(file2);
+                        if (table2 == null) {
+                            ErrorHandler.error("Error loading the referenced table");
+                        }
+
+                        if (!table2.getColumnNames().contains(list.get(2).lexeme)) {
+                            ErrorHandler.error(
+                                    "The column " + list.get(2).lexeme + " does not exist in the table " + list.get(0).toString());
+                        }
+
+                        // check if the value exists in the referenced table
+                        if (!table2.getColumnValues(list.get(2).lexeme).contains(row.get(key))) {
+                            ErrorHandler.error("The value " + row.get(key) + " does not exist in the referenced table");
+                        }
+                    }
+                }
+            }    
+        }
+
         table.addRow(row);
 
         // save the table
@@ -299,26 +393,35 @@ public class Interpreter
         return null;
     }
 
+    private Boolean thereIsAForeignKeyConstraint(Table table) {
+        List<Object> constraintsList = table.getTableConstraints();
+        for (Object constraint : constraintsList) {
+            if (constraint instanceof List) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // validate the constraints of the column
     private void validateColumnConstraintsInsert(String key, Object value) {
-
         // get the constraints of the column
         ColumnConstraints constraints = table.getColumnConstraints(key);
+        
+        // check if the value is a primary key
+        if (constraints.primaryKey != null) {
+            for (HashMap<String, Object> row : table.getRows()) {
+                if (row.get(key).equals(value)) {
+                    ErrorHandler.error("The column " + key + " must be a primary key");
+                }
+            }
+        }
 
         // check if the value is unique
         if (constraints.unique != null) {
             for (HashMap<String, Object> row : table.getRows()) {
                 if (row.get(key).equals(value)) {
                     ErrorHandler.error("The column " + key + " must be unique");
-                }
-            }
-        }
-
-        // check if the value is a primary key
-        if (constraints.primaryKey != null) {
-            for (HashMap<String, Object> row : table.getRows()) {
-                if (row.get(key).equals(value)) {
-                    ErrorHandler.error("The column " + key + " must be a primary key");
                 }
             }
         }
@@ -344,7 +447,6 @@ public class Interpreter
             ErrorHandler.error("The value " + value + " does not comply with the check condition");
         }
     }
-
 
     // update clause
     @Override
@@ -466,10 +568,10 @@ public class Interpreter
 
         // TODO: check if the value is a check
         // if (constraints.check != null) {
-        //     // evaluate the check, we have <column_name, expression>
-        //     // we should evaluate the expression
-        //     // if the expression is false, throw an error
-        //     conditionCheck(constraints.check.getY(), key, value);
+        // // evaluate the check, we have <column_name, expression>
+        // // we should evaluate the expression
+        // // if the expression is false, throw an error
+        // conditionCheck(constraints.check.getY(), key, value);
         // }
 
     }
@@ -540,15 +642,15 @@ public class Interpreter
     private void visit_add_column(Clause.AlterClause clause) {
         // List<Object> columnsDefinition = name, type, constraint ...
         // add the column name and the data type
-        table.addColumn((String)clause.columnsDefinition.get(0), (String)clause.columnsDefinition.get(1));
+        table.addColumn((String) clause.columnsDefinition.get(0), (String) clause.columnsDefinition.get(1));
 
         if (clause.columnsDefinition.size() == 2)
             return;
 
         // add the constraints of the column
-        for (int i = 2; i < clause.columnsDefinition.size(); i++) 
-            table.addColumnConstraint((String)clause.columnsDefinition.get(0), clause.columnsDefinition.get(i));
-        
+        for (int i = 2; i < clause.columnsDefinition.size(); i++)
+            table.addColumnConstraint((String) clause.columnsDefinition.get(0), clause.columnsDefinition.get(i));
+
     }
 
     // drop column
@@ -560,14 +662,14 @@ public class Interpreter
     // modify column
     private void visit_modify_column(Clause.AlterClause clause) {
         // modify the column from the table
-        table.modifyColumn((String)clause.columnsDefinition.get(0), (String)clause.columnsDefinition.get(1));
+        table.modifyColumn((String) clause.columnsDefinition.get(0), (String) clause.columnsDefinition.get(1));
 
         if (clause.columnsDefinition.size() == 2)
             return;
 
         // add the constraints of the column
-        for (int i = 2; i < clause.columnsDefinition.size(); i++) 
-            table.addColumnConstraint((String)clause.columnsDefinition.get(0), clause.columnsDefinition.get(i));
+        for (int i = 2; i < clause.columnsDefinition.size(); i++)
+            table.addColumnConstraint((String) clause.columnsDefinition.get(0), clause.columnsDefinition.get(i));
 
     }
 

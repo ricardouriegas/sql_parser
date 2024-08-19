@@ -1,4 +1,11 @@
 -- example of the use of all the column constraints
+CREATE TABLE Algo (
+    id number PRIMARY KEY,
+    NAME string default "anonimo",
+    edad number not null,
+    email string unique
+);
+
 CREATE TABLE Alumns (
     id number PRIMARY KEY,
     NAME string default "anonimo",
@@ -7,6 +14,9 @@ CREATE TABLE Alumns (
     fk_algo number,
     CONSTRAINT fk_algo_ref FOREIGN KEY (fk_algo) REFERENCES Algo(id)
 );
+
+-- insert and update in Algo
+insert into algo (id, edad, email) values (1, 20, "nose"); -- this will work
 
 insert into alumns (id, edad, email, fk_algo) values (1, 20, "pancho1@email.com", 1); -- should work 
 insert into alumns (id, edad, email, fk_algo) values (2, 30, "pancho2@email.com", 1); -- should work
