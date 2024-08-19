@@ -7,6 +7,9 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.nio.file.Path;
 
+import com.xml_parser.DTDParser.DTDInterpreter;
+import com.xml_parser.DTDParser.DTDParser;
+import com.xml_parser.DTDParser.DTDRestrictions;
 import com.xml_parser.XMLParser.*;
 
 // TODO: When creating the XML all the types are saved as type String
@@ -80,9 +83,12 @@ public class Table {
                 table_obj.table.add(row);
             }
     
+            // Parse XML metadata
             XMLParser parser = new XMLParser();
             XMLTree tree = parser.parse(csvFile.toString().replace(".csv", ".xml"));
             TagNode root = tree.getRoot();
+            
+            // TODO: validate DTD
     
             // Parse column definitions and constraints within <columns>
             for (TagNode columnsNode : root.getChildren()) {
@@ -454,17 +460,13 @@ public class Table {
     }
 
     // Method to modify a column
-    public void modifyColumn(String columnName, String newColumnName) {
-        if (!columnNames.contains(columnName)) {
-            return;
-        }
-        columnNames.set(columnNames.indexOf(columnName), newColumnName);
-        columnTypes.put(newColumnName, columnTypes.get(columnName));
-        columnTypes.remove(columnName);
-        for (HashMap<String, Object> row : table) {
-            row.put(newColumnName, row.get(columnName));
-            row.remove(columnName);
-        }
+    public void modifyColumn(String columnName, String dataType) {
+        if (!columnNames.contains(columnName)) 
+            ErrorHandler.error("Column '" + columnName + "' does not exist.");
+        
+        // Modify the data type of the column
+        columnTypes.put(columnName, dataType);
+
     }
 
     // Method to add a column name and data type to the table

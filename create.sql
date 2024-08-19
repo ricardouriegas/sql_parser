@@ -8,8 +8,27 @@ CREATE TABLE Alumns (
     CONSTRAINT fk_algo_ref FOREIGN KEY (fk_algo) REFERENCES Algo(id)
 );
 
-insert into alumns (id, edad, email, fk_algo) values (1, 20, "pancho1@email.com", 1); -- should not work bc of edad being string
+insert into alumns (id, edad, email, fk_algo) values (1, 20, "pancho1@email.com", 1); -- should work 
 insert into alumns (id, edad, email, fk_algo) values (2, 30, "pancho2@email.com", 1); -- should work
-insert into alumns (id, email, fk_algo) values (2, "pancho2@email.com", 1); -- should work
+insert into alumns (id, email, fk_algo) values (2, "pancho2@email.com", 1); -- should NOT work
 
 update alumns set edad = 20 where id = 1; -- this will fail because the column is unique
+update alumns set edad = 40 where id = 2; -- this will work
+
+-- test simple alter 
+ALTER TABLE Alumns ADD COLUMN apellido string;
+ALTER TABLE alumns MODIFY COLUMN apellido string not null;
+
+-- insert and update in apellido
+insert into alumns (id, edad, email, fk_algo, apellido) values (3, 30, "panchin", 1, "perez"); -- this will work
+update alumns set apellido = "perez2" where id = 3; -- this will work
+-- one that should not work
+insert into alumns (id, edad, email, fk_algo, apellido) values (4, 30, "panchin", 1, null); -- this will not work bc of not null
+
+update alumns set apellido = null where id = 3; -- this will not work bc of not null
+
+insert into alumns (id, edad, email, fk_algo, apellido) values (6, 25, "panchin2", 1, "perez"); -- this will work
+insert into alumns (id, edad, email, fk_algo, apellido) values (5, 30, "panchin", 1, "perez"); -- this will work
+
+-- drop column
+ALTER TABLE alumns DROP COLUMN apellido;

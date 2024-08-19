@@ -733,22 +733,21 @@ public class Parser {
 
     // columnDef = columnName dataType (columnConstraint)*
     private Clause addColumn(Token table_name) {
-        consume(ADD, "Expected keyword ADD after ALTER TABLE.");
-        List<Object> columnDefinition = columnDefinition();
-
-        return new Clause.AlterClause(table_name, "ADD", columnDefinition, null);
+        consume(COLUMN, "Expected keyword COLUMN after ADD.");
+        List<Object> column_definition = columnDefinition();
+        return new Clause.AlterClause(table_name, "ADD", column_definition, null);
     }
 
     // drop columnName
     private Clause dropColumn(Token table_name) {
-        consume(DROP, "Expected keyword DROP after ALTER TABLE.");
+        consume(COLUMN, "Expected keyword COLUMN after DROP.");
         Token column_name = consume(IDENTIFIER, "Expected column name after DROP.");
         return new Clause.AlterClause(table_name, "DROP", null, column_name.lexeme);
     }
 
     // modify columnDef
     private Clause modifyColumn(Token table_name) {
-        consume(MODIFY, "Expected keyword MODIFY after ALTER TABLE.");
+        consume(COLUMN, "Expected keyword COLUMN after MODIFY.");
         List<Object> columnDefinition = columnDefinition();
         return new Clause.AlterClause(table_name, "MODIFY", columnDefinition, null);
     }

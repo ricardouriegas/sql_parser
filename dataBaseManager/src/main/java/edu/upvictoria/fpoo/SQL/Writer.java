@@ -26,7 +26,7 @@ public class Writer {
                     new FileWriter(path.toString() + "/.DATABASE.dtd"));
     
             // DTD for the database (standard)
-            writer.write("<!ELEMENT table (name, columns, primary_key?, foreign_key*, unique*, check*)>\n");
+            writer.write("<!ELEMENT table (name, columns, primary_key?, foreign_key?, unique?, check?)>\n");
             writer.write("<!ELEMENT name (#PCDATA)>\n");
             writer.write("<!ELEMENT foreign_key (#PCDATA)>\n");
             writer.write("<!ELEMENT columns (column+)>\n");

@@ -464,13 +464,13 @@ public class Interpreter
             }
         }
 
-        // check if the value is a check
-        if (constraints.check != null) {
-            // evaluate the check, we have <column_name, expression>
-            // we should evaluate the expression
-            // if the expression is false, throw an error
-            conditionCheck(constraints.check.getY(), key, value);
-        }
+        // TODO: check if the value is a check
+        // if (constraints.check != null) {
+        //     // evaluate the check, we have <column_name, expression>
+        //     // we should evaluate the expression
+        //     // if the expression is false, throw an error
+        //     conditionCheck(constraints.check.getY(), key, value);
+        // }
 
     }
 
@@ -538,11 +538,17 @@ public class Interpreter
 
     // add column
     private void visit_add_column(Clause.AlterClause clause) {
-        // add the column to the table
-        for (Object column : clause.columnsDefinition) {
-            // add the column name and the data type
-            table.addColumn(column.toString(), column.toString());
-        }
+        // List<Object> columnsDefinition = name, type, constraint ...
+        // add the column name and the data type
+        table.addColumn((String)clause.columnsDefinition.get(0), (String)clause.columnsDefinition.get(1));
+
+        if (clause.columnsDefinition.size() == 2)
+            return;
+
+        // add the constraints of the column
+        for (int i = 2; i < clause.columnsDefinition.size(); i++) 
+            table.addColumnConstraint((String)clause.columnsDefinition.get(0), clause.columnsDefinition.get(i));
+        
     }
 
     // drop column
@@ -554,7 +560,15 @@ public class Interpreter
     // modify column
     private void visit_modify_column(Clause.AlterClause clause) {
         // modify the column from the table
-        table.modifyColumn(clause.column_name, clause.columnsDefinition.get(0).toString());
+        table.modifyColumn((String)clause.columnsDefinition.get(0), (String)clause.columnsDefinition.get(1));
+
+        if (clause.columnsDefinition.size() == 2)
+            return;
+
+        // add the constraints of the column
+        for (int i = 2; i < clause.columnsDefinition.size(); i++) 
+            table.addColumnConstraint((String)clause.columnsDefinition.get(0), clause.columnsDefinition.get(i));
+
     }
 
     // select clause
