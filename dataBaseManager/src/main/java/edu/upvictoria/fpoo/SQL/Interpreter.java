@@ -207,13 +207,17 @@ public class Interpreter
         for (Object constraint : clause.tableConstraints) {
             if (constraint instanceof List) {
                 // add the foreign key constraint
-                if (checkForeignKey(constraint)) 
+                if (checkForeignKey(constraint, table)) 
                     table.addTableConstraint(constraint);
-                
+
             } else {
                 // add the constraint
                 table.addTableConstraint(constraint);
             }
+        }
+
+        if (checkForeignKeyTypes(table)) {
+            ErrorHandler.error("The foreign key types do not match");
         }
 
         // save the table
@@ -226,9 +230,32 @@ public class Interpreter
     }
 
     /**
+     * Function to check if the foreign key types match
+     */
+    private Boolean checkForeignKeyTypes(Table table) {
+        List<Object> constraintsList = table.getTableConstraints();
+
+        // check both types
+        for (Object constraint : constraintsList) {
+            if (constraint instanceof List) {
+                List<Token> list = (List<Token>) constraint;
+
+                if (list.size() != 3) // List<Token> := [foreing_key_name, table_name, column_name]
+                    continue;
+
+                if (!table.getColumnType(list.get(0).lexeme).equals(table.getColumnType(list.get(2).lexeme))) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Function to check if the foreign key is correct
      */
-    public Boolean checkForeignKey(Object constraint) {
+    public Boolean checkForeignKey(Object constraint, Table table) {
         List<Token> list = (List<Token>) constraint;
         if (list.size() != 3) { // List<Token> := [foreing_key_name, table_name, column_name]
             ErrorHandler.error("The FOREIGN KEY constraint is not valid");
@@ -246,6 +273,7 @@ public class Interpreter
             ErrorHandler.error("Error loading the referenced table");
         }
 
+        // check if the column exists in the referenced table
         if (!table2.getColumnNames().contains(list.get(2).lexeme)) {
             ErrorHandler.error(
                     "The column " + list.get(2).lexeme + " does not exist in the table " + list.get(0).toString());
@@ -256,7 +284,7 @@ public class Interpreter
         if (constraints == null || constraints.primaryKey == null && constraints.unique == null) {
             ErrorHandler.error("The column " + list.get(2).lexeme + " must be a primary key or unique");
         }
-
+        
         return true;
     }
 
@@ -342,14 +370,6 @@ public class Interpreter
             }
         }
 
-        // check if theres not a foreign key constraint
-        if (!thereIsAForeignKeyConstraint(table)) {
-            table.addRow(row);
-            table.save(file);
-            result = "Row inserted";
-            return null;
-        }
-
         // validate foreign key constraints
         for (String key : row.keySet()) {
             List<Object> constraintsList = table.getTableConstraints();
@@ -357,9 +377,8 @@ public class Interpreter
                 if (constraint instanceof List) {
                     List<Token> list = (List<Token>) constraint;
 
-                    if (list.size() != 3)  // List<Token> := [foreing_key_name, table_name, column_name]
+                    if (list.size() != 3) // List<Token> := [foreing_key_name, table_name, column_name]
                         continue;
-                    
 
                     if (list.get(0).lexeme.equals(key)) {
                         // check if the value exists in the referenced table
@@ -371,7 +390,8 @@ public class Interpreter
 
                         if (!table2.getColumnNames().contains(list.get(2).lexeme)) {
                             ErrorHandler.error(
-                                    "The column " + list.get(2).lexeme + " does not exist in the table " + list.get(0).toString());
+                                    "The column " + list.get(2).lexeme + " does not exist in the table "
+                                            + list.get(0).toString());
                         }
 
                         // check if the value exists in the referenced table
@@ -380,7 +400,7 @@ public class Interpreter
                         }
                     }
                 }
-            }    
+            }
         }
 
         table.addRow(row);
@@ -407,7 +427,7 @@ public class Interpreter
     private void validateColumnConstraintsInsert(String key, Object value) {
         // get the constraints of the column
         ColumnConstraints constraints = table.getColumnConstraints(key);
-        
+
         // check if the value is a primary key
         if (constraints.primaryKey != null) {
             for (HashMap<String, Object> row : table.getRows()) {
@@ -518,6 +538,38 @@ public class Interpreter
 
                     // validate that the value complies with the column constraints
                     validateColumnConstraintsUpdate(key, value);
+
+                    // validate foreign key constraints
+                    List<Object> constraintsList = table.getTableConstraints();
+                    for (Object constraint : constraintsList) {
+                        if (constraint instanceof List) {
+                            List<Token> list2 = (List<Token>) constraint;
+
+                            if (list2.size() != 3) // List<Token> := [foreing_key_name, table_name, column_name]
+                                continue;
+
+                            if (list2.get(0).lexeme.equals(key)) {
+                                // check if the value exists in the referenced table
+                                Path file2 = folder.resolve(list2.get(1).lexeme + ".csv");
+                                Table table2 = Table.load(file2);
+                                if (table2 == null) {
+                                    ErrorHandler.error("Error loading the referenced table");
+                                }
+
+                                if (!table2.getColumnNames().contains(list2.get(2).lexeme)) {
+                                    ErrorHandler.error(
+                                            "The column " + list2.get(2).lexeme + " does not exist in the table "
+                                                    + list2.get(0).toString());
+                                }
+
+                                // check if the value exists in the referenced table
+                                if (!table2.getColumnValues(list2.get(2).lexeme).contains(value)) {
+                                    ErrorHandler
+                                            .error("The value " + value + " does not exist in the referenced table");
+                                }
+                            }
+                        }
+                    }
 
                     // if the value is a string put it in quotes
                     table.updateRow(key, value, i);

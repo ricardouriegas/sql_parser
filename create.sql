@@ -7,7 +7,7 @@ CREATE TABLE Algo (
 );
 
 CREATE TABLE Alumns (
-    id number PRIMARY KEY,
+    id string PRIMARY KEY,
     NAME string default "anonimo",
     edad number unique not null,
     email string unique,
@@ -19,11 +19,15 @@ CREATE TABLE Alumns (
 insert into algo (id, edad, email) values (1, 20, "nose"); -- this will work
 
 insert into alumns (id, edad, email, fk_algo) values (1, 20, "pancho1@email.com", 1); -- should work 
-insert into alumns (id, edad, email, fk_algo) values (2, 30, "pancho2@email.com", 1); -- should work
+insert into alumns (id, edad, email, fk_algo) values (2, 30, "pancho2@email.com", 2); -- should NOT work
 insert into alumns (id, email, fk_algo) values (2, "pancho2@email.com", 1); -- should NOT work
 
 update alumns set edad = 20 where id = 1; -- this will fail because the column is unique
 update alumns set edad = 40 where id = 2; -- this will work
+update alumns set fk_algo = 2 where id = 1; -- this will NOT work
+
+insert into algo (id, edad, email) values (2, 20, "nose2"); -- this will work
+update alumns set fk_algo = 2 where id = 1; -- this will work
 
 -- test simple alter 
 ALTER TABLE Alumns ADD COLUMN apellido string;
